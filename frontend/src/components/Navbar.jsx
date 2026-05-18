@@ -228,7 +228,7 @@ const Navbar = () => {
             opacity: 1;
             height: calc(100vh - 70px);
             pointer-events: all;
-            width: 30%;
+            width: 45%;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
           }
