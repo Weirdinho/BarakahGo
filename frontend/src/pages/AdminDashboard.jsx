@@ -418,7 +418,7 @@ const AdminDashboard = () => {
         }
 
         .admin-header {
-        margin-top: 50px;
+        margin-top: 70px;
           display: flex;
           justify-content: space-between;
           align-items: center;
