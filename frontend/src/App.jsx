@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
@@ -12,7 +12,6 @@ import AdminDashboard from './pages/AdminDashboard';
 import BeneficiaryPage from './pages/BeneficiaryPage';
 import VendorPage from './pages/VendorPage';
 
-// Loading screen while checking auth
 const AuthLoading = () => (
   <div style={{
     minHeight: '100vh',
@@ -25,7 +24,6 @@ const AuthLoading = () => (
   </div>
 );
 
-// Protected route wrapper
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
 
@@ -38,7 +36,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   return children;
 };
 
-// Auto-redirect based on role
 const RoleRedirect = () => {
   const { user, loading } = useAuth();
   
@@ -53,6 +50,22 @@ const RoleRedirect = () => {
   }
 };
 
+// Layout wrapper that conditionally shows footer
+const Layout = ({ children }) => {
+  const location = useLocation();
+  const isAdminPage = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
+
+  return (
+    <div className="app">
+      <Navbar />
+      <main>
+        {children}
+      </main>
+      {!isAdminPage && <Footer />}
+    </div>
+  );
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -63,61 +76,54 @@ function App() {
   );
 }
 
-// Separate component so useAuth works inside Router
 const AppContent = () => {
   const { loading } = useAuth();
 
-  // Show loading while checking auth on initial load
   if (loading) {
     return <AuthLoading />;
   }
 
   return (
-    <div className="app">
-      <Navbar />
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/donate" element={<Donate />} />
-          <Route path="/donate/verify" element={<Donate verifyMode={true} />} />
-          <Route path="/login" element={<Login />} />
-          
-          {/* Auto-redirect after login */}
-          <Route path="/portal" element={<RoleRedirect />} />
-          
-          {/* Admin */}
-          <Route path="/admin" element={
-            <ProtectedRoute allowedRoles={['admin']}>
-              <AdminDashboard />
-            </ProtectedRoute>
-          } />
-          
-          {/* Beneficiary */}
-          <Route path="/beneficiary" element={
-            <ProtectedRoute allowedRoles={['beneficiary']}>
-              <BeneficiaryPage />
-            </ProtectedRoute>
-          } />
-          
-          {/* Vendor */}
-          <Route path="/vendor" element={
-            <ProtectedRoute allowedRoles={['vendor']}>
-              <VendorPage />
-            </ProtectedRoute>
-          } />
-          
-          {/* Donor/Corporate */}
-          <Route path="/dashboard" element={
-            <ProtectedRoute allowedRoles={['donor', 'corporate']}>
-              <Dashboard />
-            </ProtectedRoute>
-          } />
-          
-          <Route path="/vendors" element={<Vendors />} />
-        </Routes>
-      </main>
-      <Footer />
-    </div>
+    <Layout>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/donate" element={<Donate />} />
+        <Route path="/donate/verify" element={<Donate verifyMode={true} />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/portal" element={<RoleRedirect />} />
+        
+        <Route path="/admin" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/:section" element={
+          <ProtectedRoute allowedRoles={['admin']}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/beneficiary" element={
+          <ProtectedRoute allowedRoles={['beneficiary']}>
+            <BeneficiaryPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/vendor" element={
+          <ProtectedRoute allowedRoles={['vendor']}>
+            <VendorPage />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/dashboard" element={
+          <ProtectedRoute allowedRoles={['donor', 'corporate']}>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        
+        <Route path="/vendors" element={<Vendors />} />
+      </Routes>
+    </Layout>
   );
 };
 
