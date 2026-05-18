@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// 🔥 Crash handler (IMPORTANT)
+// Crash handler
 process.on('uncaughtException', (err) => {
   console.error('UNCAUGHT EXCEPTION:', err);
 });
@@ -19,47 +19,46 @@ const voucherRoutes = require('./routes/vouchers');
 const vendorRoutes = require('./routes/vendors');
 const adminRoutes = require('./routes/admin');
 
-// Connect DB FIRST
+// Connect DB
 connectDB();
 
 const app = express();
 
 // ======================
-// Middleware
+// CORS - ALLOW ALL ORIGINS FOR NOW (FIX FOR RENDER)
 // ======================
+app.use(cors({
+  origin: true, // Reflects the request origin - allows all
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
 
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  })
-);
-
+// Handle preflight for ALL routes
 app.options('*', cors());
 
+// ======================
+// Middleware
+// ======================
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ======================
 // Debug middleware
-// ======================
 app.use((req, res, next) => {
-  console.log(`REQUEST: ${req.method} ${req.url}`);
+  console.log(`REQUEST: ${req.method} ${req.url} from ${req.headers.origin}`);
   next();
 });
 
 // ======================
-// Test route (FOR DEBUGGING)
+// Test route
 // ======================
 app.get('/test', (req, res) => {
   res.json({ message: 'server works' });
 });
 
 // ======================
-// Routes
+// API Routes
 // ======================
 app.use('/api/auth', authRoutes);
 app.use('/api/donations', donationRoutes);
@@ -86,42 +85,17 @@ app.use((req, res) => {
   });
 });
 
-const allowedOrigins = [
-  'http://localhost:3000',           // Local dev
-  'https://barakahgo.onrender.com', // Backend itself (for health checks)
-  process.env.FRONTEND_URL           // Will add frontend URL later
-].filter(Boolean);
-
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, etc.)
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-  })
-);
 // ======================
-// Error handler - MUST be last
+// Error handler
 // ======================
 app.use((err, req, res, next) => {
   console.error('SERVER ERROR:', err);
-
   res.status(err.status || 500).json({
-    message: err.message || 'Server Error',
-    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
+    message: err.message || 'Server Error'
   });
 });
 
-// ======================
-// Start server
-// ======================
+// Use Render's PORT
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
