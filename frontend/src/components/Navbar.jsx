@@ -34,6 +34,7 @@ const Navbar = () => {
           backdrop-filter: blur(10px);
           border-bottom: 1px solid #dfe6e9;
           padding: 0 2rem;
+          
         }
 
         .navbar-inner {
@@ -43,6 +44,7 @@ const Navbar = () => {
           align-items: center;
           justify-content: space-between;
           height: 70px;
+         
         }
 
         .logo {
