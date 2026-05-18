@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaBars, FaTimes, FaUser, FaSignOutAlt } from 'react-icons/fa';
+import {
+  FaBars,
+  FaTimes,
+  FaUser,
+  FaSignOutAlt
+} from 'react-icons/fa';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const handleLogout = () => {
@@ -172,12 +178,17 @@ const Navbar = () => {
           transform: translateX(2px);
         }
 
-        /* Mobile Styles */
+        /* =========================
+           MOBILE STYLES
+        ========================== */
         @media (max-width: 768px) {
+
           .navbar {
             padding: 0 1rem;
           }
-
+          .logo {
+          margin-left: 70px;
+          }
           .mobile-toggle {
             display: flex;
             align-items: center;
@@ -188,31 +199,42 @@ const Navbar = () => {
           .nav-links {
             position: fixed;
             top: 70px;
-            left: 0;
             right: 0;
             bottom: 0;
+            width: 75%;
             background: rgba(255, 255, 255, 0.98);
             backdrop-filter: blur(20px);
+
             flex-direction: column;
             align-items: flex-start;
             gap: 0;
             padding: 2rem;
-            transform: translateX(-100%);
+
+            transform: translateX(100%);
             opacity: 0;
             pointer-events: none;
+
             overflow-y: auto;
+
+            box-shadow: -5px 0 20px rgba(0,0,0,0.1);
+
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
           }
 
           .nav-links.open {
             transform: translateX(0);
             opacity: 1;
+            height: calc(100vh - 70px);
             pointer-events: all;
+            width: 30%;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
           }
 
           .nav-links li {
             width: 100%;
             opacity: 0;
-            transform: translateX(-20px);
+            transform: translateX(20px);
             transition: all 0.3s ease;
           }
 
@@ -221,15 +243,38 @@ const Navbar = () => {
             transform: translateX(0);
           }
 
-          /* Staggered animation for menu items */
-          .nav-links.open li:nth-child(1) { transition-delay: 0.05s; }
-          .nav-links.open li:nth-child(2) { transition-delay: 0.1s; }
-          .nav-links.open li:nth-child(3) { transition-delay: 0.15s; }
-          .nav-links.open li:nth-child(4) { transition-delay: 0.2s; }
-          .nav-links.open li:nth-child(5) { transition-delay: 0.25s; }
-          .nav-links.open li:nth-child(6) { transition-delay: 0.3s; }
-          .nav-links.open li:nth-child(7) { transition-delay: 0.35s; }
-          .nav-links.open li:nth-child(8) { transition-delay: 0.4s; }
+          /* stagger animation */
+          .nav-links.open li:nth-child(1) {
+            transition-delay: 0.05s;
+          }
+
+          .nav-links.open li:nth-child(2) {
+            transition-delay: 0.1s;
+          }
+
+          .nav-links.open li:nth-child(3) {
+            transition-delay: 0.15s;
+          }
+
+          .nav-links.open li:nth-child(4) {
+            transition-delay: 0.2s;
+          }
+
+          .nav-links.open li:nth-child(5) {
+            transition-delay: 0.25s;
+          }
+
+          .nav-links.open li:nth-child(6) {
+            transition-delay: 0.3s;
+          }
+
+          .nav-links.open li:nth-child(7) {
+            transition-delay: 0.35s;
+          }
+
+          .nav-links.open li:nth-child(8) {
+            transition-delay: 0.4s;
+          }
 
           .nav-links a,
           .nav-links span,
@@ -264,29 +309,8 @@ const Navbar = () => {
             width: 100%;
             justify-content: flex-start;
           }
-
-          /* Overlay when menu is open */
-          .nav-links::before {
-            content: '';
-            position: fixed;
-            top: 70px;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.3);
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.4s ease;
-            z-index: -1;
-          }
-
-          .nav-links.open::before {
-            opacity: 1;
-            pointer-events: all;
-          }
         }
 
-        /* Prevent body scroll when menu is open */
         body.menu-open {
           overflow: hidden;
         }
@@ -294,34 +318,73 @@ const Navbar = () => {
 
       <nav className="navbar">
         <div className="navbar-inner">
-          <Link to="/" className="logo" onClick={closeMenu}>
+
+          <Link
+            to="/"
+            className="logo"
+            onClick={closeMenu}
+          >
             <div className="logo-icon">GB</div>
             GO BARAKAH
           </Link>
 
           <ul className={`nav-links ${mobileOpen ? 'open' : ''}`}>
-            <li><Link to="/" onClick={closeMenu}>Home</Link></li>
-            
+
+            <li>
+              <Link to="/" onClick={closeMenu}>
+                Home
+              </Link>
+            </li>
+
             {user && (
               <>
-                <li><Link to="/donate" onClick={closeMenu}>Donate</Link></li>
-                <li><Link to="/vendors" onClick={closeMenu}>Vendors</Link></li>
-                
+                <li>
+                  <Link to="/donate" onClick={closeMenu}>
+                    Donate
+                  </Link>
+                </li>
+
+                <li>
+                  <Link to="/vendors" onClick={closeMenu}>
+                    Vendors
+                  </Link>
+                </li>
+
                 {user.role === 'admin' && (
-                  <li><Link to="/admin" onClick={closeMenu}>Admin</Link></li>
+                  <li>
+                    <Link to="/admin" onClick={closeMenu}>
+                      Admin
+                    </Link>
+                  </li>
                 )}
+
                 {user.role === 'beneficiary' && (
-                  <li><Link to="/beneficiary" onClick={closeMenu}>My Aid</Link></li>
+                  <li>
+                    <Link to="/beneficiary" onClick={closeMenu}>
+                      My Aid
+                    </Link>
+                  </li>
                 )}
+
                 {user.role === 'vendor' && (
-                  <li><Link to="/vendor" onClick={closeMenu}>Vendor Portal</Link></li>
+                  <li>
+                    <Link to="/vendor" onClick={closeMenu}>
+                      Vendor Portal
+                    </Link>
+                  </li>
                 )}
-                {(user.role === 'donor' || user.role === 'corporate') && (
-                  <li><Link to="/dashboard" onClick={closeMenu}>Dashboard</Link></li>
+
+                {(user.role === 'donor' ||
+                  user.role === 'corporate') && (
+                  <li>
+                    <Link to="/dashboard" onClick={closeMenu}>
+                      Dashboard
+                    </Link>
+                  </li>
                 )}
               </>
             )}
-            
+
             {user ? (
               <>
                 <li>
@@ -329,9 +392,13 @@ const Navbar = () => {
                     <FaUser /> {user.name}
                   </span>
                 </li>
+
                 <li>
-                  <button 
-                    onClick={() => { handleLogout(); closeMenu(); }}
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      closeMenu();
+                    }}
                     className="logout-btn"
                   >
                     <FaSignOutAlt /> Logout
@@ -339,16 +406,30 @@ const Navbar = () => {
                 </li>
               </>
             ) : (
-              <li><Link to="/login" className="nav-cta" onClick={closeMenu}>Get Started</Link></li>
+              <li>
+                <Link
+                  to="/login"
+                  className="nav-cta"
+                  onClick={closeMenu}
+                >
+                  Get Started
+                </Link>
+              </li>
             )}
           </ul>
 
-          <button 
-            className={`mobile-toggle ${mobileOpen ? 'open' : ''}`}
+          <button
+            className={`mobile-toggle ${
+              mobileOpen ? 'open' : ''
+            }`}
             onClick={() => setMobileOpen(!mobileOpen)}
             aria-label="Toggle menu"
           >
-            <span className={`hamburger-icon ${mobileOpen ? 'open' : ''}`}>
+            <span
+              className={`hamburger-icon ${
+                mobileOpen ? 'open' : ''
+              }`}
+            >
               {mobileOpen ? <FaTimes /> : <FaBars />}
             </span>
           </button>

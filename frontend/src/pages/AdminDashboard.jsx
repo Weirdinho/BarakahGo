@@ -3,14 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   FaUsers, FaDonate, FaTicketAlt, FaStore, FaClipboardList,
-  FaTrash, FaEdit, FaCheck, FaTimes, FaChartBar, FaSignOutAlt
+  FaTrash, FaEdit, FaCheck, FaTimes, FaChartBar, FaSignOutAlt,
+  FaBars, FaTimes as FaClose
 } from 'react-icons/fa';
 import api from '../services/api';
 
 const AdminDashboard = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState('overview');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [stats, setStats] = useState({});
   const [users, setUsers] = useState([]);
   const [donations, setDonations] = useState([]);
@@ -98,6 +102,8 @@ const AdminDashboard = () => {
     { id: 'vouchers', label: 'Vouchers', icon: <FaTicketAlt /> },
     { id: 'vendors', label: 'Vendors', icon: <FaStore /> },
   ];
+
+  const closeSidebar = () => setSidebarOpen(false);
 
   const renderOverview = () => (
     <div>
@@ -360,58 +366,306 @@ const AdminDashboard = () => {
   );
 
   if (loading) {
-    return (
-      <div className="admin-dashboard">
-        <div className="loading"><div className="spinner"></div></div>
-      </div>
-    );
+    return <div className="loading">Loading...</div>;
   }
 
   return (
-    <div className="admin-dashboard">
-      {/* Sidebar */}
-      <aside className="admin-sidebar">
-        <div className="admin-brand">
-          <h3>GO BARAKAH</h3>
-          <p>Admin Panel</p>
-        </div>
-        <nav className="admin-nav">
-          {tabs.map(tab => (
-            <button
-              key={tab.id}
-              className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.icon}
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </nav>
-        <button onClick={handleLogout} className="admin-logout">
-          <FaSignOutAlt /> Logout
-        </button>
-      </aside>
+    <>
+      <style>{`
+        .admin-dashboard {
+          display: flex;
+          min-height: 100vh;
+          background: #f5f7fa;
+        }
 
-      {/* Main Content */}
-      <main className="admin-main">
-        <header className="admin-header">
-          <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>
-          <div className="admin-user">
-            <span>{user?.name}</span>
-            <span className="admin-role">{user?.role}</span>
+        .admin-sidebar {
+          width: 260px;
+          background: #1a5f2a;
+          color: white;
+          padding: 1rem;
+          transition: all 0.3s ease;
+        }
+
+        .admin-brand {
+          margin-bottom: 2rem;
+        }
+
+        .admin-nav {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .admin-nav-item {
+          background: none;
+          border: none;
+          color: white;
+          padding: 0.8rem;
+          text-align: left;
+          cursor: pointer;
+          display: flex;
+          gap: 10px;
+          border-radius: 6px;
+        }
+
+        .admin-nav-item.active {
+          background: rgba(255,255,255,0.2);
+        }
+
+        .admin-main {
+          flex: 1;
+          padding: 1.5rem;
+        }
+
+        .admin-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .menu-toggle {
+          display: none;
+          position: fixed;
+          top: 15px;
+          left: 15px;
+          background: #1a5f2a;
+          color: white;
+          border: none;
+          padding: 10px;
+          border-radius: 6px;
+          z-index: 2000;
+        }
+
+        @media (max-width: 768px) {
+          .menu-toggle {
+            display: block;
+          }
+
+          .admin-sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 100%;
+            transform: translateX(-100%);
+            z-index: 1500;
+          }
+
+          .admin-sidebar.open {
+            transform: translateX(0);
+          }
+
+          .admin-main {
+            margin-left: 0;
+          }
+        }
+
+        .admin-stats-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 1.5rem;
+        }
+
+        .admin-stat-card {
+          background: white;
+          border-radius: 12px;
+          padding: 1.5rem;
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .admin-stat-icon {
+          width: 50px;
+          height: 50px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.25rem;
+        }
+
+        .admin-stat-card h3 {
+          font-size: 1.5rem;
+          font-weight: 800;
+          color: #1e293b;
+        }
+
+        .admin-stat-card p {
+          font-size: 0.85rem;
+          color: #64748b;
+        }
+
+        .admin-table-container {
+          background: white;
+          border-radius: 12px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+
+        .admin-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .admin-table th {
+          background: #f8fafc;
+          padding: 1rem;
+          text-align: left;
+          font-size: 0.8rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #64748b;
+          font-weight: 600;
+          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .admin-table td {
+          padding: 1rem;
+          border-bottom: 1px solid #f1f5f9;
+          font-size: 0.9rem;
+          color: #334155;
+        }
+
+        .admin-table tr:hover {
+          background: #f8fafc;
+        }
+
+        .status-badge {
+          padding: 0.25rem 0.75rem;
+          border-radius: 50px;
+          font-size: 0.75rem;
+          font-weight: 600;
+          text-transform: uppercase;
+        }
+
+        .status-badge.success,
+        .status-badge.approved,
+        .status-badge.active {
+          background: #dcfce7;
+          color: #166534;
+        }
+
+        .status-badge.pending {
+          background: #fef3c7;
+          color: #92400e;
+        }
+
+        .status-badge.failed,
+        .status-badge.rejected,
+        .status-badge.cancelled {
+          background: #fee2e2;
+          color: #991b1b;
+        }
+
+        .status-badge.redeemed,
+        .status-badge.fulfilled {
+          background: #dbeafe;
+          color: #1e40af;
+        }
+
+        .role-select {
+          padding: 0.5rem;
+          border: 1px solid #e2e8f0;
+          border-radius: 6px;
+          font-size: 0.85rem;
+          background: white;
+        }
+
+        .action-btn {
+          padding: 0.5rem;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 0.85rem;
+          margin-right: 0.5rem;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.25rem;
+        }
+
+        .action-btn.delete {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        .action-btn.approve {
+          background: #dcfce7;
+          color: #166534;
+        }
+
+        .action-btn.reject {
+          background: #fee2e2;
+          color: #dc2626;
+        }
+
+        @media (max-width: 1024px) {
+          .admin-stats-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+
+        @media (max-width: 768px) {
+          .admin-stats-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
+
+      <button
+        className="menu-toggle"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+      >
+        {sidebarOpen ? <FaClose /> : <FaBars />}
+      </button>
+
+      <div className="admin-dashboard">
+        <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
+          <div className="admin-brand">
+            <h3>GO BARAKAH</h3>
+            <p>Admin Panel</p>
           </div>
-        </header>
 
-        <div className="admin-content">
-          {activeTab === 'overview' && renderOverview()}
-          {activeTab === 'users' && renderUsers()}
-          {activeTab === 'donations' && renderDonations()}
-          {activeTab === 'applications' && renderApplications()}
-          {activeTab === 'vouchers' && renderVouchers()}
-          {activeTab === 'vendors' && renderVendors()}
-        </div>
-      </main>
-    </div>
+          <nav className="admin-nav">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                className={`admin-nav-item ${activeTab === tab.id ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  closeSidebar();
+                }}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            ))}
+          </nav>
+
+          <button onClick={handleLogout} className="admin-logout">
+            <FaSignOutAlt /> Logout
+          </button>
+        </aside>
+
+        <main className="admin-main">
+          <header className="admin-header">
+            <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>
+            <div>
+              {user?.name} ({user?.role})
+            </div>
+          </header>
+
+          <div className="admin-content">
+            {activeTab === 'overview' && renderOverview()}
+            {activeTab === 'users' && renderUsers()}
+            {activeTab === 'donations' && renderDonations()}
+            {activeTab === 'applications' && renderApplications()}
+            {activeTab === 'vouchers' && renderVouchers()}
+            {activeTab === 'vendors' && renderVendors()}
+          </div>
+        </main>
+      </div>
+    </>
   );
 };
 
