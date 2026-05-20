@@ -141,7 +141,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom">
-          <p>© 2024 Go Barakah. All rights reserved.</p>
+          <p>© 2026 Go Barakah. All rights reserved.</p>
         </div>
       </footer>
     </>
