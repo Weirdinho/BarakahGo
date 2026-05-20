@@ -12,6 +12,16 @@ import AdminDashboard from './pages/AdminDashboard';
 import BeneficiaryPage from './pages/BeneficiaryPage';
 import VendorPage from './pages/VendorPage';
 
+// NEW: Footer pages
+import About from './pages/About';
+import Contact from './pages/Contact';
+import Careers from './pages/Careers';
+import Press from './pages/Press';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
+import Security from './pages/Security';
+import Compliance from './pages/Compliance';
+
 const AuthLoading = () => (
   <div style={{
     minHeight: '100vh',
@@ -26,22 +36,18 @@ const AuthLoading = () => (
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, loading } = useAuth();
-
   if (loading) return <AuthLoading />;
   if (!user) return <Navigate to="/login" />;
   if (allowedRoles && !allowedRoles.includes(user.role)) {
     return <Navigate to="/" />;
   }
-
   return children;
 };
 
 const RoleRedirect = () => {
   const { user, loading } = useAuth();
-  
   if (loading) return <AuthLoading />;
   if (!user) return <Navigate to="/login" />;
-  
   switch (user.role) {
     case 'admin': return <Navigate to="/admin" />;
     case 'beneficiary': return <Navigate to="/beneficiary" />;
@@ -50,7 +56,6 @@ const RoleRedirect = () => {
   }
 };
 
-// Layout wrapper that conditionally shows footer
 const Layout = ({ children }) => {
   const location = useLocation();
   const isAdminPage = location.pathname === '/admin' || location.pathname.startsWith('/admin/');
@@ -78,10 +83,7 @@ function App() {
 
 const AppContent = () => {
   const { loading } = useAuth();
-
-  if (loading) {
-    return <AuthLoading />;
-  }
+  if (loading) return <AuthLoading />;
 
   return (
     <Layout>
@@ -91,6 +93,16 @@ const AppContent = () => {
         <Route path="/donate/verify" element={<Donate verifyMode={true} />} />
         <Route path="/login" element={<Login />} />
         <Route path="/portal" element={<RoleRedirect />} />
+        
+        {/* NEW: Footer pages */}
+        <Route path="/about" element={<About />} />
+        <Route path="/contact" element={<Contact />} />
+        <Route path="/careers" element={<Careers />} />
+        <Route path="/press" element={<Press />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/security" element={<Security />} />
+        <Route path="/compliance" element={<Compliance />} />
         
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}>
