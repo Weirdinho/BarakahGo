@@ -143,7 +143,7 @@ const Donate = ({ verifyMode }) => {
       <div className="donate-container">
         <div className="donate-card">
           <h2>Make a Donation</h2>
-          <p>Choose an amount and category to give smart with Gobarakah</p>
+          <p>Choose an amount and category to give smart with Amanah Charity Foundation</p>
 
           {error && (
             <div style={{

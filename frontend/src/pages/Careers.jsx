@@ -202,7 +202,7 @@ const Careers = () => {
         <h2>Don't See Your Role?</h2>
         <p>
           We're always looking for exceptional talent. Send your resume and a note about 
-          what you'd like to work on to careers@gobarakah.com.
+          what you'd like to work on to careers@Amanah Charity Foundation.com.
         </p>
       </div>
     </>

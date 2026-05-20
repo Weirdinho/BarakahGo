@@ -326,7 +326,7 @@ const Navbar = () => {
             className="logo"
             onClick={closeMenu}
           >
-            <div className="logo-icon">GB</div>
+            <div className="logo-icon">ACF</div>
             Amanah Charity Foundation
           </Link>
 

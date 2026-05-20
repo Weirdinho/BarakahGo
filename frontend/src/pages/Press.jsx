@@ -188,7 +188,7 @@ const Press = () => {
           <h3>Media Inquiries</h3>
           <p>
             For press inquiries, interview requests, or speaking opportunities, 
-            please contact our communications team at <strong>press@gobarakah.com</strong>.
+            please contact our communications team at <strong>press@Amanah Charity Foundation.com</strong>.
           </p>
         </div>
       </div>

@@ -127,7 +127,7 @@ const Privacy = () => {
         <h2>7. Contact Us</h2>
         <p>
           If you have questions about this Privacy Policy, please contact us at 
-          privacy@gobarakah.com.
+          privacy@Amanah Charity Foundation.com.
         </p>
       </div>
     </>

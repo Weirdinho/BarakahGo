@@ -126,7 +126,7 @@ const Terms = () => {
 
         <h2>9. Contact</h2>
         <p>
-          Questions about the Terms of Service should be sent to legal@gobarakah.com.
+          Questions about the Terms of Service should be sent to legal@Amanah Charity Foundation.com.
         </p>
       </div>
     </>

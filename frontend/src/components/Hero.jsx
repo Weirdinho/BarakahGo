@@ -12,7 +12,7 @@ const Hero = () => {
           </h1>
           <p>
             Aid access for everyone, even the unbanked and underserved. 
-            Gobarakah sends your donations as e-vouchers to ensure that even 
+            Amanah Charity Foundation sends your donations as e-vouchers to ensure that even 
             the unbanked can access aid.
           </p>
           <div className="hero-btns">
@@ -33,8 +33,8 @@ const Hero = () => {
               </div>
               <div className="phone-body">
                 <div className="phone-card">
-                  <h5>NOURISH MALAYSIA</h5>
-                  <div className="amount">RM 75</div>
+                  <h5>NOURISH NIGERIA</h5>
+                  <div className="amount">₦ 5000</div>
                   <p style={{fontSize:'0.75rem', color:'var(--text-light)', marginTop:'0.5rem'}}>
                     Nutritional Food Programme for B40 Primary School Students
                   </p>

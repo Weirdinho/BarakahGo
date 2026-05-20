@@ -119,7 +119,7 @@ const Partnerships = () => {
         <div className="contact-box">
           <h3>Interested in Partnering?</h3>
           <p>
-            Reach out to our partnerships team at <strong>partnerships@gobarakah.com</strong>
+            Reach out to our partnerships team at <strong>partnerships@Amanah Charity Foundation.com</strong>
           </p>
         </div>
       </div>

@@ -57,7 +57,7 @@ const Login = () => {
     <div className="login-page">
       <div className="login-card">
         <h2>{isLogin ? 'Welcome Back' : 'Get Started'}</h2>
-        <p>{isLogin ? 'Sign in to your account' : 'Create your Gobarakah account'}</p>
+        <p>{isLogin ? 'Sign in to your account' : 'Create your Amanah Charity Foundation account'}</p>
 
         {error && (
           <div style={{

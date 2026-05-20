@@ -10,7 +10,7 @@ const features = [
   {
     icon: <FaHandHoldingHeart />,
     title: 'Choice & Dignity',
-    description: 'Gobarakah matches donor intent with beneficiary needs with our vendor network, preventing waste of donations while giving purposeful choice.'
+    description: 'Amanah Charity Foundation matches donor intent with beneficiary needs with our vendor network, preventing waste of donations while giving purposeful choice.'
   },
   {
     icon: <FaShieldAlt />,
@@ -20,7 +20,7 @@ const features = [
   {
     icon: <FaUsers />,
     title: 'Collaborative Platform',
-    description: 'The public, corporates, and charitable organizations use Gobarakah to manage their donations and aid programmes in real time.'
+    description: 'The public, corporates, and charitable organizations use Amanah Charity Foundation to manage their donations and aid programmes in real time.'
   },
   {
     icon: <FaMobileAlt />,
@@ -38,9 +38,9 @@ const Features = () => {
   return (
     <section className="features">
       <div className="section-header">
-        <h2>Why Choose Gobarakah?</h2>
+        <h2>Why Choose Amanah Charity Foundation?</h2>
         <p>
-          Whether food, education, or financial support, give smart with Gobarakah!
+          Whether food, education, or financial support, give smart with Amanah Charity Foundation!
           Corporate giving with your own branded aid e-vouchers? Talk to us!
         </p>
       </div>
