@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaDonate, FaCreditCard, FaQrcode, FaStore } from 'react-icons/fa';
+import { Link } from 'react-router-dom';
+import { FaDonate, FaCreditCard, FaQrcode, FaStore, FaArrowRight } from 'react-icons/fa';
 
 const steps = [
   {
@@ -43,6 +44,11 @@ const HowItWorks = () => {
             <p>{step.description}</p>
           </div>
         ))}
+      </div>
+      <div style={{ textAlign: 'center', marginTop: '2rem' }}>
+        <Link to="/how-it-works" className="btn btn-secondary">
+          Learn More <FaArrowRight />
+        </Link>
       </div>
     </section>
   );

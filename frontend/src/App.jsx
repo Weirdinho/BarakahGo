@@ -21,6 +21,7 @@ import Terms from './pages/Terms';
 
 import Partnerships from './pages/Partnerships'; // ← NEW
 import FAQ from './pages/FAQ'; // ← NEW
+import HowItWorksPage from './pages/HowItWorksPage';
 
 const AuthLoading = () => (
   <div style={{
@@ -105,6 +106,7 @@ const AppContent = () => {
 
         <Route path="/partnerships" element={<Partnerships />} /> {/* ← NEW */}
         <Route path="/faq" element={<FAQ />} /> {/* ← NEW */}
+         <Route path="/how-it-works" element={<HowItWorksPage />} />
         
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}>

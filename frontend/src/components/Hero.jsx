@@ -19,9 +19,9 @@ const Hero = () => {
             <Link to="/donate" className="btn btn-primary">
               Start Giving <FaArrowRight />
             </Link>
-            {/* <button className="btn btn-secondary">
-              <FaPlay /> Watch How It Works
-            </button> */}
+            <Link to="/how-it-works" className="btn btn-secondary">
+              <FaPlay /> How It Works
+            </Link>
           </div>
         </div>
 
