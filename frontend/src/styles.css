@@ -380,6 +380,7 @@ body {
 .how-it-works {
   padding: 80px 2rem;
   background: var(--bg-light);
+  display: none;
 }
 
 .steps-grid {
