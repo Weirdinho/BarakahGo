@@ -62,9 +62,6 @@ const About = () => {
           font-size: 0.95rem;
           margin-bottom: 0;
         }
-        .team-section {
-          margin-top: 3rem;
-        }
         .team-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
@@ -117,8 +114,7 @@ const About = () => {
         </p>
         <p>
           Our e-voucher platform connects donors directly with beneficiaries through a network of verified vendors, 
-          ensuring that every donation reaches its intended destination. Whether it's food for a hungry family, 
-          school supplies for a child, or medical aid for someone in need, Go Barakah makes it possible.
+          ensuring that every donation reaches its intended destination.
         </p>
 
         <h2>Our Mission</h2>

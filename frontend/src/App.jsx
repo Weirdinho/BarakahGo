@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import Donate from './pages/Donate';
 import Dashboard from './pages/Dashboard';
@@ -11,16 +12,15 @@ import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import BeneficiaryPage from './pages/BeneficiaryPage';
 import VendorPage from './pages/VendorPage';
-
-// NEW: Footer pages
 import About from './pages/About';
 import Contact from './pages/Contact';
-import Careers from './pages/Careers';
+
 import Press from './pages/Press';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
-import Security from './pages/Security';
-import Compliance from './pages/Compliance';
+
+import Partnerships from './pages/Partnerships'; // ← NEW
+import FAQ from './pages/FAQ'; // ← NEW
 
 const AuthLoading = () => (
   <div style={{
@@ -75,6 +75,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <AppContent />
       </Router>
     </AuthProvider>
@@ -94,15 +95,16 @@ const AppContent = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/portal" element={<RoleRedirect />} />
         
-        {/* NEW: Footer pages */}
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
-        <Route path="/careers" element={<Careers />} />
+
         <Route path="/press" element={<Press />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
-        <Route path="/security" element={<Security />} />
-        <Route path="/compliance" element={<Compliance />} />
+
+
+        <Route path="/partnerships" element={<Partnerships />} /> {/* ← NEW */}
+        <Route path="/faq" element={<FAQ />} /> {/* ← NEW */}
         
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}>
