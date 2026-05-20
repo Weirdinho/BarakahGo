@@ -75,7 +75,7 @@ const Privacy = () => {
 
         <h2>1. Introduction</h2>
         <p>
-          Go Barakah ("we," "our," or "us") is committed to protecting your privacy. 
+          Amanah Charity Foundation ("we," "our," or "us") is committed to protecting your privacy. 
           This Privacy Policy explains how we collect, use, disclose, and safeguard your 
           information when you use our platform.
         </p>

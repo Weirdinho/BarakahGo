@@ -145,14 +145,14 @@ const Careers = () => {
       `}</style>
 
       <section className="page-hero">
-        <h1>Careers at Go Barakah</h1>
+        <h1>Careers at Amanah Charity Foundation</h1>
         <p>Join us in building technology that makes a real difference in people's lives.</p>
       </section>
 
       <div className="page-content">
         <h2>Why Work With Us?</h2>
         <p>
-          At Go Barakah, we're not just building software — we're building a movement. 
+          At Amanah Charity Foundation, we're not just building software — we're building a movement. 
           Every line of code, every design decision, and every partnership we forge 
           directly impacts communities in need across Africa.
         </p>

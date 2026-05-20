@@ -107,7 +107,7 @@ const Footer = () => {
       <footer className="footer">
         <div className="footer-inner">
           <div className="footer-brand">
-            <h3>GO BARAKAH</h3>
+            <h3>Amanah Charity Foundation</h3>
             <p>
               Smart Giving E-Voucher Platform. Experience a smarter, targeted way of giving.
               Aid access for everyone, even the unbanked and underserved.
@@ -123,7 +123,7 @@ const Footer = () => {
           <div className="footer-links">
             <h4>About Us</h4>
             <ul>
-              <li><Link to="/about">Go Barakah-Smart Giving</Link></li>
+              <li><Link to="/about">Amanah Charity Foundation-Smart Giving</Link></li>
               <li><Link to="/contact">Contact Us</Link></li>
               <li><Link to="/partnerships">Partnerships</Link></li>
             </ul>
@@ -141,7 +141,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom">
-          <p>© 2026 Go Barakah. All rights reserved.</p>
+          <p>© 2026 Amanah Charity Foundation. All rights reserved.</p>
         </div>
       </footer>
     </>

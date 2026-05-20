@@ -79,7 +79,7 @@ const Partnerships = () => {
       <div className="page-content">
         <h2>Why Partner With Us?</h2>
         <p>
-          Go Barakah partners with corporations, NGOs, government agencies, and 
+          Amanah Charity Foundation partners with corporations, NGOs, government agencies, and 
           retail networks to create a seamless ecosystem for aid distribution. 
           Together, we can reach more people, more efficiently.
         </p>
@@ -111,7 +111,7 @@ const Partnerships = () => {
         <div className="partner-type">
           <h3>Government & Institutional Partners</h3>
           <p>
-            Integrate Go Barakah into social welfare programs for transparent, 
+            Integrate Amanah Charity Foundation into social welfare programs for transparent, 
             efficient distribution of subsidies and emergency relief.
           </p>
         </div>

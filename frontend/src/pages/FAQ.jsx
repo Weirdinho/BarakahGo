@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 const faqs = [
   {
-    question: 'What is Go Barakah?',
-    answer: 'Go Barakah is a smart giving e-voucher platform that enables transparent, efficient aid distribution. Donors contribute funds that are converted to digital vouchers, which beneficiaries can redeem at approved vendors.'
+    question: 'What is Amanah Charity Foundation?',
+    answer: 'Amanah Charity Foundation is a smart giving e-voucher platform that enables transparent, efficient aid distribution. Donors contribute funds that are converted to digital vouchers, which beneficiaries can redeem at approved vendors.'
   },
   {
     question: 'How do I make a donation?',
@@ -114,7 +114,7 @@ const FAQ = () => {
 
       <section className="page-hero">
         <h1>Frequently Asked Questions</h1>
-        <p>Find answers to common questions about Go Barakah.</p>
+        <p>Find answers to common questions about Amanah Charity Foundation.</p>
       </section>
 
       <div className="page-content">

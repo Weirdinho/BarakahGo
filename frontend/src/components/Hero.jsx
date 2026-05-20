@@ -29,7 +29,7 @@ const Hero = () => {
           <div className="phone-mockup">
             <div className="phone-screen">
               <div className="phone-header">
-                <h4>GO BARAKAH</h4>
+                <h4>Amanah Charity Foundation</h4>
               </div>
               <div className="phone-body">
                 <div className="phone-card">

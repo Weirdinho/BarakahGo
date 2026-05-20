@@ -57,19 +57,19 @@ const Terms = () => {
 
       <section className="page-hero">
         <h1>Terms of Service</h1>
-        <p>Please read these terms carefully before using Go Barakah.</p>
+        <p>Please read these terms carefully before using Amanah Charity Foundation.</p>
       </section>
 
       <div className="page-content">
         <h2>1. Acceptance of Terms</h2>
         <p>
-          By accessing or using Go Barakah, you agree to be bound by these Terms of Service. 
+          By accessing or using Amanah Charity Foundation, you agree to be bound by these Terms of Service. 
           If you disagree with any part of the terms, you may not access the service.
         </p>
 
         <h2>2. Definitions</h2>
         <ul>
-          <li><strong>"Platform"</strong> refers to the Go Barakah website and services</li>
+          <li><strong>"Platform"</strong> refers to the Amanah Charity Foundation website and services</li>
           <li><strong>"User"</strong> refers to donors, beneficiaries, vendors, and visitors</li>
           <li><strong>"Voucher"</strong> refers to digital aid credits distributed through our platform</li>
           <li><strong>"Vendor"</strong> refers to approved merchants who accept vouchers</li>
@@ -104,7 +104,7 @@ const Terms = () => {
 
         <h2>6. Platform Limitations</h2>
         <p>
-          Go Barakah is not responsible for:
+          Amanah Charity Foundation is not responsible for:
         </p>
         <ul>
           <li>The quality of goods/services provided by vendors</li>

@@ -623,7 +623,7 @@ const AdminDashboard = () => {
       <div className="admin-dashboard">
         <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="admin-brand">
-            <h3>GO BARAKAH</h3>
+            <h3>Amanah Charity Foundation</h3>
             <p>Admin Panel</p>
           </div>
 
