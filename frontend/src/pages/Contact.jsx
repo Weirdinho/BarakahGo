@@ -1,13 +1,46 @@
 import React, { useState } from 'react';
+import api from '../services/api';
 
 const Contact = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
+  const [formData, setFormData] = useState({ 
+    name: '', 
+    email: '', 
+    subject: 'General Inquiry', 
+    message: '' 
+  });
   const [submitted, setSubmitted] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => setSubmitted(false), 3000);
+    setSending(true);
+    setError('');
+
+    // DEBUG: Log request details
+    console.log('🔧 API baseURL:', api.defaults.baseURL);
+    console.log('🔧 Request endpoint: /contact');
+    console.log('🔧 Full URL:', api.defaults.baseURL + '/contact');
+    console.log('🔧 Form data:', formData);
+
+    try {
+      const response = await api.post('/contact', formData);
+      console.log('✅ Server response:', response.data);
+
+      setSubmitted(true);
+      setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' });
+      
+      setTimeout(() => setSubmitted(false), 5000);
+    } catch (err) {
+      console.error('❌ Email send failed:', err);
+      console.error('❌ Error response:', err.response?.data);
+      console.error('❌ Error status:', err.response?.status);
+      console.error('❌ Request config:', err.config);
+      
+      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -108,6 +141,37 @@ const Contact = () => {
           border-radius: 8px;
           margin-bottom: 1rem;
         }
+        .error-message {
+          background: #fee2e2;
+          color: #991b1b;
+          padding: 1rem;
+          border-radius: 8px;
+          margin-bottom: 1rem;
+        }
+        .submit-btn {
+          width: 100%;
+          padding: 0.875rem;
+          background: #1a5f2a;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+        }
+        .submit-btn:hover:not(:disabled) {
+          background: #145022;
+        }
+        .submit-btn:disabled {
+          opacity: 0.7;
+          cursor: not-allowed;
+        }
+        .icon {
+          font-size: 1.25rem;
+          min-width: 24px;
+          text-align: center;
+        }
         @media (max-width: 768px) {
           .contact-container { grid-template-columns: 1fr; gap: 2rem; }
           .page-hero h1 { font-size: 2rem; }
@@ -128,14 +192,16 @@ const Contact = () => {
           </p>
 
           <div className="contact-detail">
+            <span className="icon">📧</span>
             <div>
               <h4>Email</h4>
-              <p>hello@Amanah Charity Foundation.com</p>
-              <p>support@Amanah Charity Foundation.com</p>
+              <p>hello@AmanahCharityFoundation.com</p>
+              <p>support@AmanahCharityFoundation.com</p>
             </div>
           </div>
 
           <div className="contact-detail">
+            <span className="icon">📞</span>
             <div>
               <h4>Phone</h4>
               <p>+234 800 123 4567</p>
@@ -144,6 +210,7 @@ const Contact = () => {
           </div>
 
           <div className="contact-detail">
+            <span className="icon">📍</span>
             <div>
               <h4>Address</h4>
               <p>123 Innovation Hub,<br />Victoria Island, Lagos, Nigeria</p>
@@ -151,6 +218,7 @@ const Contact = () => {
           </div>
 
           <div className="contact-detail">
+            <span className="icon">🕐</span>
             <div>
               <h4>Office Hours</h4>
               <p>Monday - Friday: 9:00 AM - 6:00 PM WAT</p>
@@ -161,11 +229,19 @@ const Contact = () => {
 
         <div className="contact-form">
           <h2>Send a Message</h2>
+          
           {submitted && (
             <div className="success-message">
               Thank you! Your message has been sent successfully.
             </div>
           )}
+          
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit}>
             <div className="form-group">
               <label>Your Name</label>
@@ -210,8 +286,12 @@ const Contact = () => {
                 required
               />
             </div>
-            <button type="submit" className="btn btn-primary" style={{ width: '100%' }}>
-              Send Message
+            <button 
+              type="submit" 
+              className="submit-btn"
+              disabled={sending}
+            >
+              {sending ? 'Sending...' : 'Send Message'}
             </button>
           </form>
         </div>

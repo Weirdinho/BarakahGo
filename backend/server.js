@@ -18,6 +18,7 @@ const donationRoutes = require('./routes/donations');
 const voucherRoutes = require('./routes/vouchers');
 const vendorRoutes = require('./routes/vendors');
 const adminRoutes = require('./routes/admin');
+const contactRoutes = require('./routes/contact');
 
 // Connect DB
 connectDB();
@@ -65,6 +66,7 @@ app.use('/api/donations', donationRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/contact', contactRoutes);
 
 // ======================
 // Health check
