@@ -17,27 +17,30 @@ const Contact = () => {
     setSending(true);
     setError('');
 
-    // DEBUG: Log request details
-    console.log('🔧 API baseURL:', api.defaults.baseURL);
-    console.log('🔧 Request endpoint: /contact');
-    console.log('🔧 Full URL:', api.defaults.baseURL + '/contact');
-    console.log('🔧 Form data:', formData);
-
     try {
+      console.log('🚀 API baseURL:', api.defaults.baseURL);
+      console.log('🚀 Endpoint: /contact');
+      console.log('🚀 Full URL:', api.defaults.baseURL + '/contact');
+      
       const response = await api.post('/contact', formData);
-      console.log('✅ Server response:', response.data);
+      console.log('✅ Success:', response.data);
 
       setSubmitted(true);
       setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' });
-      
       setTimeout(() => setSubmitted(false), 5000);
     } catch (err) {
-      console.error('❌ Email send failed:', err);
-      console.error('❌ Error response:', err.response?.data);
-      console.error('❌ Error status:', err.response?.status);
-      console.error('❌ Request config:', err.config);
+      console.error('❌ Error:', err.message);
+      console.error('❌ Status:', err.response?.status);
+      console.error('❌ Data:', err.response?.data);
+      console.error('❌ URL:', err.config?.url);
+      console.error('❌ BaseURL:', err.config?.baseURL);
       
-      setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+      // Better error message for 404
+      if (err.response?.status === 404) {
+        setError('Server route not found. Please check backend deployment.');
+      } else {
+        setError(err.response?.data?.message || 'Failed to send message. Please try again.');
+      }
     } finally {
       setSending(false);
     }
