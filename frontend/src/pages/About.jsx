@@ -132,7 +132,7 @@ const About = () => {
           <div className="value-card">
             <h3>Dignity</h3>
             <p>Beneficiaries choose what they need, when they need it. Aid with autonomy.</p>
-          </div> 
+          </div>  
           <div className="value-card">
             <h3>Innovation</h3> 
             <p>Using technology to solve age-old problems in aid distribution.</p>
