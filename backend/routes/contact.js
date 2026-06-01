@@ -8,10 +8,12 @@ console.log('📧 EMAIL_USER set:', !!process.env.EMAIL_USER);
 console.log('📧 EMAIL_PASS set:', !!process.env.EMAIL_PASS);
 console.log('📧 RECEIVER_EMAIL:', process.env.RECEIVER_EMAIL || 'hello@AmanahCharityFoundation.com');
 
-// Create transporter (Brevo SMTP - FREE & RELIABLE)
+
 const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
+host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: { 
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
   },
@@ -53,7 +55,7 @@ router.post('/', [
 
     const mailOptions = {
       from: `"${name}" <${process.env.EMAIL_USER}>`,
-      to: process.env.RECEIVER_EMAIL || 'hello@AmanahCharityFoundation.com',
+      to: email,
       replyTo: email,
       subject: `Contact Form: ${subject}`,
       html: `

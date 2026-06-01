@@ -21,4 +21,4 @@ router.post('/login', [
 // @route   GET /api/auth/me  ← MUST have auth middleware!
 router.get('/me', auth, authController.getMe);
 
-module.exports = router;
+module.exports = router; 

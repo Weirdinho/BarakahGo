@@ -142,24 +142,34 @@ const About = () => {
         <h2>Our Team</h2>
         <div className="team-grid">
           <div className="team-member">
-            <div className="team-avatar">AB</div>
-            <h4>Ahmad Bello</h4>
+            <div className="team-avatar">MA</div>
+            <h4>Prof Mustapha Abubakar</h4>
             <p>Founder & CEO</p>
           </div>
           <div className="team-member">
-            <div className="team-avatar">SO</div>
-            <h4>Sarah Okafor</h4>
-            <p>Chief Technology Officer</p>
+            <div className="team-avatar">RM</div>
+            <h4>Engr Ramalan Musa</h4>
+            <p>Deputy Chairman</p>
           </div>
           <div className="team-member">
-            <div className="team-avatar">DA</div>
-            <h4>David Adeyemi</h4>
-            <p>Head of Operations</p>
+            <div className="team-avatar">MS</div>
+            <h4>Mustapha Sani</h4>
+            <p>Secretary</p>
           </div>
           <div className="team-member">
-            <div className="team-avatar">FM</div>
-            <h4>Fatima Mohammed</h4>
-            <p>Partnerships Lead</p>
+            <div className="team-avatar">IK</div>
+            <h4>Prof Ibrahim Usman Kusfa</h4>
+            <p>BOT member</p>
+            <div className="team-member">
+            <div className="team-avatar">SS</div>
+            <h4>Dr Sulaiman D. Sani</h4>
+            <p>BOT member</p>
+          </div>
+          <div className="team-member">
+            <div className="team-avatar">AY</div>
+            <h4>Alhaji Abbas Yusuf</h4>
+            <p>BOT member</p>
+          </div>
           </div>
         </div>
 
