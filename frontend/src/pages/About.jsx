@@ -1,5 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import MA from "../images/ma.jpg";
+import RM from "../images/rm.jpg";
+import MS from "../images/ms.jpg";
+import IK from "../images/ik.jpg";
+import SS from "../images/ss.jpg";
+import AY from "../images/ay.jpg";
 
 const About = () => {
   return (
@@ -72,18 +78,13 @@ const About = () => {
           text-align: center;
         }
         .team-avatar {
-          width: 100px;
-          height: 100px;
-          background: linear-gradient(135deg, #1a5f2a, #2d8a3e);
-          border-radius: 50%;
-          margin: 0 auto 1rem;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: white;
-          font-size: 2rem;
-          font-weight: 700;
-        }
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+  border: 3px solid #ddd;
+}
         .team-member h4 {
           color: #2d3436;
           margin-bottom: 0.25rem;
@@ -140,38 +141,45 @@ const About = () => {
         </div>
 
         <h2>Our Team</h2>
-        <div className="team-grid">
-          <div className="team-member">
-            <div className="team-avatar">MA</div>
-            <h4>Prof Mustapha Abubakar</h4>
-            <p>Founder & CEO</p>
-          </div>
-          <div className="team-member">
-            <div className="team-avatar">RM</div>
-            <h4>Engr Ramalan Musa</h4>
-            <p>Deputy Chairman</p>
-          </div>
-          <div className="team-member">
-            <div className="team-avatar">MS</div>
-            <h4>Mustapha Sani</h4>
-            <p>Secretary</p>
-          </div>
-          <div className="team-member">
-            <div className="team-avatar">IK</div>
-            <h4>Prof Ibrahim Usman Kusfa</h4>
-            <p>BOT member</p>
-            <div className="team-member">
-            <div className="team-avatar">SS</div>
-            <h4>Dr Sulaiman D. Sani</h4>
-            <p>BOT member</p>
-          </div>
-          <div className="team-member">
-            <div className="team-avatar">AY</div>
-            <h4>Alhaji Abbas Yusuf</h4>
-            <p>BOT member</p>
-          </div>
-          </div>
-        </div>
+       <div className="team-grid">
+
+  <div className="team-member">
+    <img className="team-avatar" src={MA} alt="Prof Mustapha Abubakar" />
+    <h4>Prof Mustapha Abubakar</h4>
+    <p>Founder & CEO</p>
+  </div>
+
+  <div className="team-member">
+    <img className="team-avatar" src={RM} alt="Engr Ramalan Musa" />
+    <h4>Engr Ramalan Musa</h4>
+    <p>Deputy Chairman</p>
+  </div>
+
+  <div className="team-member">
+    <img className="team-avatar" src={MS} alt="Mustapha Sani" />
+    <h4>Mustapha Sani</h4>
+    <p>Secretary</p>
+  </div>
+
+  <div className="team-member">
+    <img className="team-avatar" src={IK} alt="Prof Ibrahim Usman Kusfa" />
+    <h4>Prof Ibrahim Usman Kusfa</h4>
+    <p>BOT member</p>
+  </div>
+
+  <div className="team-member">
+    <img className="team-avatar" src={SS} alt="Dr Sulaiman D. Sani" />
+    <h4>Dr Sulaiman D. Sani</h4>
+    <p>BOT member</p>
+  </div>
+
+  <div className="team-member">
+    <img className="team-avatar" src={AY} alt="Alhaji Abbas Yusuf" />
+    <h4>Alhaji Abbas Yusuf</h4>
+    <p>BOT member</p>
+  </div>
+
+</div>
 
         <h2>Join Us</h2>
         <p>
