@@ -350,7 +350,7 @@ const HowItWorksPage = () => {
         <div className="cta-section">
           <h2>Ready to Make a Difference?</h2>
           <p>Join thousands of donors who are changing lives through smart giving.</p>
-          <Link to="/donate" className="cta-btn">
+          <Link to="/donateGateway" className="cta-btn">
             Start Giving Now <FaArrowRight />
           </Link>
         </div>

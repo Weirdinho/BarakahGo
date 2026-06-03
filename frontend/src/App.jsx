@@ -14,13 +14,15 @@ import BeneficiaryPage from './pages/BeneficiaryPage';
 import VendorPage from './pages/VendorPage';
 import About from './pages/About';
 import Contact from './pages/Contact';
-
+import DonateGateway from './pages/DonateGateway';
+import GuestDonate from './pages/GuestDonate';
+import PaymentVerify from './pages/PaymentVerify';
 import Press from './pages/Press';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 
 import Partnerships from './pages/Partnerships'; // ← NEW
-import FAQ from './pages/FAQ'; // ← NEW
+import FAQ from './pages/FAQ'; 
 import HowItWorksPage from './pages/HowItWorksPage';
 
 const AuthLoading = () => (
@@ -102,7 +104,9 @@ const AppContent = () => {
         <Route path="/press" element={<Press />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
-
+        <Route path="/donateGateway" element={<DonateGateway />} />
+        <Route path="/donateGateway/guest" element={<GuestDonate />} />
+        <Route path="/donate/verify" element={<PaymentVerify />} />
 
         <Route path="/partnerships" element={<Partnerships />} /> {/* ← NEW */}
         <Route path="/faq" element={<FAQ />} /> {/* ← NEW */}

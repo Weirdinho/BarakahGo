@@ -341,7 +341,7 @@ const Navbar = () => {
             {user && (
               <>
                 <li>
-                  <Link to="/donate" onClick={closeMenu}>
+                  <Link to="/donateGateway" onClick={closeMenu}>
                     Donate
                   </Link>
                 </li>
@@ -410,7 +410,7 @@ const Navbar = () => {
             ) : (
               <li>
                 <Link
-                  to="/login"
+                  to="/donateGateway"
                   className="nav-cta"
                   onClick={closeMenu}
                 >

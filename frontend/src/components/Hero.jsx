@@ -16,7 +16,7 @@ const Hero = () => {
             the unbanked can access aid.
           </p>
           <div className="hero-btns">
-            <Link to="/donate" className="btn btn-primary">
+            <Link to="/donateGateway" className="btn btn-primary">
               Start Giving <FaArrowRight />
             </Link>
             <Link to="/how-it-works" className="btn btn-secondary">
