@@ -66,7 +66,7 @@ const GuestDonate = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${API_URL}/api/payments/initialize`, {
+      const response = await fetch(`${API_URL}/payments/initialize`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
