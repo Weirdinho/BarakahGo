@@ -23,7 +23,7 @@ router.get('/applications', auth, adminOnly, adminController.getApplications);
 
 // @route   PUT /api/admin/applications/:id
 router.put('/applications/:id', auth, adminOnly, adminController.updateApplication);
-
+ 
 // @route   GET /api/admin/vouchers
 router.get('/vouchers', auth, adminOnly, adminController.getAllVouchers);
 
