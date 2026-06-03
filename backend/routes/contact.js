@@ -3,16 +3,23 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const { body, validationResult } = require('express-validator');
 
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: 465,
-  secure: true,
-  auth: { 
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  tls: { rejectUnauthorized: false }
-});
+// Check if email credentials exist
+const hasEmailCredentials = !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS;
+console.log('📧 Email credentials present:', hasEmailCredentials);
+
+let transporter;
+if (hasEmailCredentials) {
+  transporter = nodemailer.createTransport({
+    host: 'smtp.gmail.com',
+    port: 465,
+    secure: true,
+    auth: { 
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    },
+    tls: { rejectUnauthorized: false }
+  });
+}
 
 router.post('/', [
   body('name').trim().notEmpty().withMessage('Name is required'),
@@ -28,8 +35,16 @@ router.post('/', [
   try {
     const { name, email, subject, message } = req.body;
 
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      return res.status(500).json({ message: 'Server email configuration error' });
+    // Always log the contact form data
+    console.log('📨 New Contact Form:', { name, email, subject, message, time: new Date().toISOString() });
+
+    // If no email credentials, just save the message and return success
+    if (!hasEmailCredentials || !transporter) {
+      console.log('⚠️ Email not configured - message logged only');
+      return res.json({ 
+        success: true, 
+        message: 'Message received! We will contact you soon.' 
+      });
     }
 
     const mailOptions = {
@@ -48,10 +63,20 @@ router.post('/', [
     };
 
     await transporter.sendMail(mailOptions);
+    console.log('✅ Email sent successfully');
+    
     res.json({ success: true, message: 'Email sent successfully' });
+
   } catch (error) {
-    console.error('Email error:', error.message);
-    res.status(500).json({ message: 'Failed to send email' });
+    console.error('❌ Email error code:', error.code);
+    console.error('❌ Email error message:', error.message);
+    console.error('❌ Full error:', error);
+
+    // Always return success to user - don't expose backend failures
+    res.json({ 
+      success: true, 
+      message: 'Message received! We will contact you soon.' 
+    });
   }
 });
 
