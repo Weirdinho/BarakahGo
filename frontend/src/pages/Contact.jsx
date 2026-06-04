@@ -18,12 +18,7 @@ const Contact = () => {
     setError('');
 
     try {
-      console.log('🚀 API baseURL:', api.defaults.baseURL);
-      console.log('🚀 Endpoint: /contact');
-      console.log('🚀 Full URL:', api.defaults.baseURL + '/contact');
-      
       const response = await api.post('/contact', formData);
-      console.log('✅ Success:', response.data);
 
       setSubmitted(true);
       setFormData({ name: '', email: '', subject: 'General Inquiry', message: '' });
