@@ -1,18 +1,17 @@
 const express = require('express');
 const router = express.Router();
-const nodemailer = require('nodemailer');
 const { body, validationResult } = require('express-validator');
 
-// Use SendGrid instead of Gmail
-const transporter = nodemailer.createTransport({
-  host: 'smtp.sendgrid.net',
-  port: 587,
-  secure: false, // TLS
-  auth: {
-    user: 'apikey',
-    pass: process.env.SENDGRID_API_KEY
-  }
-});
+// Use SendGrid SDK directly - more reliable than nodemailer
+const sgMail = require('@sendgrid/mail');
+
+// Set API key if available
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+  console.log('✅ SendGrid API key configured');
+} else {
+  console.log('⚠️ SendGrid API key not found - emails will be logged only');
+}
 
 router.post('/', [
   body('name').trim().notEmpty().withMessage('Name is required'),
@@ -28,19 +27,20 @@ router.post('/', [
   try {
     const { name, email, subject, message } = req.body;
 
-    console.log('📨 Contact form:', { name, email, subject });
+    // Always log the contact form
+    console.log('📨 Contact form received:', { name, email, subject, time: new Date().toISOString() });
 
+    // If no SendGrid key, just log and return success
     if (!process.env.SENDGRID_API_KEY) {
-      console.log('⚠️ SendGrid not configured');
       return res.json({ 
         success: true, 
         message: 'Message received! We will contact you soon.' 
       });
     }
 
-    const mailOptions = {
-      from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
+    const msg = {
       to: process.env.RECEIVER_EMAIL || 'hello@AmanahCharityFoundation.com',
+      from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
       replyTo: email,
       subject: `Contact Form: ${subject}`,
       html: `
@@ -53,13 +53,18 @@ router.post('/', [
       `
     };
 
-    await transporter.sendMail(mailOptions);
+    await sgMail.send(msg);
     console.log('✅ Email sent via SendGrid');
 
     res.json({ success: true, message: 'Email sent successfully' });
 
   } catch (error) {
     console.error('❌ SendGrid error:', error.message);
+    if (error.response) {
+      console.error('❌ SendGrid response:', error.response.body);
+    }
+    
+    // Always return success to user
     res.json({ 
       success: true, 
       message: 'Message received! We will contact you soon.' 
