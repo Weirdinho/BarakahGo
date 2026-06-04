@@ -3,23 +3,16 @@ const router = express.Router();
 const nodemailer = require('nodemailer');
 const { body, validationResult } = require('express-validator');
 
-// Check if email credentials exist
-const hasEmailCredentials = !!process.env.EMAIL_USER && !!process.env.EMAIL_PASS;
-console.log('📧 Email credentials present:', hasEmailCredentials);
-
-let transporter;
-if (hasEmailCredentials) {
-  transporter = nodemailer.createTransport({
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
-    auth: { 
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    },
-    tls: { rejectUnauthorized: false }
-  });
-}
+// Use SendGrid instead of Gmail
+const transporter = nodemailer.createTransport({
+  host: 'smtp.sendgrid.net',
+  port: 587,
+  secure: false, // TLS
+  auth: {
+    user: 'apikey',
+    pass: process.env.SENDGRID_API_KEY
+  }
+});
 
 router.post('/', [
   body('name').trim().notEmpty().withMessage('Name is required'),
@@ -35,12 +28,10 @@ router.post('/', [
   try {
     const { name, email, subject, message } = req.body;
 
-    // Always log the contact form data
-    console.log('📨 New Contact Form:', { name, email, subject, message, time: new Date().toISOString() });
+    console.log('📨 Contact form:', { name, email, subject });
 
-    // If no email credentials, just save the message and return success
-    if (!hasEmailCredentials || !transporter) {
-      console.log('⚠️ Email not configured - message logged only');
+    if (!process.env.SENDGRID_API_KEY) {
+      console.log('⚠️ SendGrid not configured');
       return res.json({ 
         success: true, 
         message: 'Message received! We will contact you soon.' 
@@ -48,7 +39,7 @@ router.post('/', [
     }
 
     const mailOptions = {
-      from: `"${name}" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
       to: process.env.RECEIVER_EMAIL || 'hello@AmanahCharityFoundation.com',
       replyTo: email,
       subject: `Contact Form: ${subject}`,
@@ -63,16 +54,12 @@ router.post('/', [
     };
 
     await transporter.sendMail(mailOptions);
-    console.log('✅ Email sent successfully');
-    
+    console.log('✅ Email sent via SendGrid');
+
     res.json({ success: true, message: 'Email sent successfully' });
 
   } catch (error) {
-    console.error('❌ Email error code:', error.code);
-    console.error('❌ Email error message:', error.message);
-    console.error('❌ Full error:', error);
-
-    // Always return success to user - don't expose backend failures
+    console.error('❌ SendGrid error:', error.message);
     res.json({ 
       success: true, 
       message: 'Message received! We will contact you soon.' 
