@@ -392,7 +392,7 @@ const Navbar = () => {
             onClick={closeMenu}
           >
             <div className="logo-icon">ACF</div>
-            Amanah Charity Foundation
+        
           </Link>
 
           <ul className={`nav-links ${mobileOpen ? 'open' : ''}`}>
