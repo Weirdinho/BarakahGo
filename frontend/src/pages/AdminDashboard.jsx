@@ -623,7 +623,7 @@ const AdminDashboard = () => {
       <div className="admin-dashboard">
         <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="admin-brand">
-            <h3>Amanah Charity Foundation</h3>
+
             <p>Admin Panel</p>
           </div>
 
@@ -643,9 +643,7 @@ const AdminDashboard = () => {
             ))}
           </nav>
 
-          <button onClick={handleLogout} className="admin-logout">
-            <FaSignOutAlt /> Logout
-          </button>
+         
         </aside>
 
         <main className="admin-main">

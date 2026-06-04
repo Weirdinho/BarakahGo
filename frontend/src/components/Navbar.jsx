@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   FaBars,
@@ -15,6 +15,7 @@ import {
 const Navbar = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -42,6 +43,20 @@ const Navbar = () => {
       default:
         return '/';
     }
+  };
+
+  // Check if a path is active
+  const isActive = (path) => {
+    if (path === '/') {
+      return location.pathname === '/';
+    }
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  // Check if user is currently on their dashboard page
+  const isOnDashboard = () => {
+    const dashboardPath = getDashboardPath();
+    return location.pathname === dashboardPath || location.pathname.startsWith(dashboardPath + '/');
   };
 
   return (
@@ -131,6 +146,16 @@ const Navbar = () => {
           width: 100%;
         }
 
+        /* ACTIVE STATE */
+        .nav-links a.active {
+          color: #1a5f2a;
+          font-weight: 700;
+        }
+
+        .nav-links a.active::after {
+          width: 100%;
+        }
+
         .nav-cta {
           background: #1a5f2a;
           color: white !important;
@@ -146,6 +171,11 @@ const Navbar = () => {
 
         .nav-cta::after {
           display: none !important;
+        }
+
+        .nav-cta.active {
+          background: #0f3d1a;
+          box-shadow: 0 4px 15px rgba(26, 95, 42, 0.3);
         }
 
         .mobile-toggle {
@@ -190,6 +220,11 @@ const Navbar = () => {
 
         .user-name:hover {
           color: #1a5f2a;
+        }
+
+        .user-name.active {
+          color: #1a5f2a;
+          font-weight: 700;
         }
 
         .logout-btn {
@@ -300,9 +335,22 @@ const Navbar = () => {
             display: none;
           }
 
+          .nav-links a.active {
+            background: rgba(26, 95, 42, 0.08);
+            border-radius: 8px;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            margin-left: -1rem;
+            margin-right: -1rem;
+          }
+
           .nav-cta {
             text-align: center;
             margin-top: 1rem;
+          }
+
+          .nav-cta.active {
+            background: #0f3d1a;
           }
 
           .user-name {
@@ -311,6 +359,15 @@ const Navbar = () => {
             border-bottom: 1px solid #f1f5f9;
             color: #1a5f2a;
             font-weight: 600;
+          }
+
+          .user-name.active {
+            background: rgba(26, 95, 42, 0.08);
+            border-radius: 8px;
+            padding-left: 1rem;
+            padding-right: 1rem;
+            margin-left: -1rem;
+            margin-right: -1rem;
           }
 
           .logout-btn {
@@ -335,56 +392,84 @@ const Navbar = () => {
             onClick={closeMenu}
           >
             <div className="logo-icon">ACF</div>
-            
+            Amanah Charity Foundation
           </Link>
 
           <ul className={`nav-links ${mobileOpen ? 'open' : ''}`}>
 
             {/* Public Links - Always Visible */}
             <li>
-              <Link to="/" onClick={closeMenu}>
+              <Link 
+                to="/" 
+                onClick={closeMenu}
+                className={isActive('/') ? 'active' : ''}
+              >
                 <FaHome /> Home
               </Link>
             </li>
 
             <li>
-              <Link to="/about" onClick={closeMenu}>
+              <Link 
+                to="/about" 
+                onClick={closeMenu}
+                className={isActive('/about') ? 'active' : ''}
+              >
                 <FaInfoCircle /> About
               </Link>
             </li>
 
             <li>
-              <Link to="/contact" onClick={closeMenu}>
+              <Link 
+                to="/contact" 
+                onClick={closeMenu}
+                className={isActive('/contact') ? 'active' : ''}
+              >
                 <FaEnvelope /> Contact
               </Link>
             </li>
 
             <li>
-              <Link to="/faq" onClick={closeMenu}>
+              <Link 
+                to="/faq" 
+                onClick={closeMenu}
+                className={isActive('/faq') ? 'active' : ''}
+              >
                 <FaQuestionCircle /> FAQ
               </Link>
             </li>
 
-            {/* Role-based Links Only */}
-            {user?.role === 'admin' && (
+            {/* Role-based Links - Hidden when on dashboard */}
+            {user?.role === 'admin' && !isOnDashboard() && (
               <li>
-                <Link to="/admin" onClick={closeMenu}>
+                <Link 
+                  to="/admin" 
+                  onClick={closeMenu}
+                  className={isActive('/admin') ? 'active' : ''}
+                >
                   Admin
                 </Link>
               </li>
             )}
 
-            {user?.role === 'vendor' && (
+            {user?.role === 'vendor' && !isOnDashboard() && (
               <li>
-                <Link to="/vendor" onClick={closeMenu}>
+                <Link 
+                  to="/vendor" 
+                  onClick={closeMenu}
+                  className={isActive('/vendor') ? 'active' : ''}
+                >
                   Vendor Portal
                 </Link>
               </li>
             )}
 
-            {(user?.role === 'donor' || user?.role === 'corporate') && (
+            {(user?.role === 'donor' || user?.role === 'corporate') && !isOnDashboard() && (
               <li>
-                <Link to="/dashboard" onClick={closeMenu}>
+                <Link 
+                  to="/dashboard" 
+                  onClick={closeMenu}
+                  className={isActive('/dashboard') ? 'active' : ''}
+                >
                   Dashboard
                 </Link>
               </li>
@@ -396,7 +481,7 @@ const Navbar = () => {
                 <li>
                   <Link 
                     to={getDashboardPath()} 
-                    className="user-name"
+                    className={`user-name ${isActive(getDashboardPath()) ? 'active' : ''}`}
                     onClick={closeMenu}
                   >
                     <FaUser /> {user.name}
@@ -419,7 +504,7 @@ const Navbar = () => {
               <li>
                 <Link
                   to="/donateGateway"
-                  className="nav-cta"
+                  className={`nav-cta ${isActive('/donateGateway') ? 'active' : ''}`}
                   onClick={closeMenu}
                 >
                   Get Started
