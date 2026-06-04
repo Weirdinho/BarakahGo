@@ -5,7 +5,11 @@ import {
   FaBars,
   FaTimes,
   FaUser,
-  FaSignOutAlt
+  FaSignOutAlt,
+  FaHome,
+  FaInfoCircle,
+  FaEnvelope,
+  FaQuestionCircle
 } from 'react-icons/fa';
 
 const Navbar = () => {
@@ -21,6 +25,25 @@ const Navbar = () => {
 
   const closeMenu = () => setMobileOpen(false);
 
+  // Get the dashboard path based on user role
+  const getDashboardPath = () => {
+    if (!user) return '/login';
+    
+    switch (user.role) {
+      case 'admin':
+        return '/admin';
+      case 'vendor':
+        return '/vendor';
+      case 'beneficiary':
+        return '/beneficiary';
+      case 'donor':
+      case 'corporate':
+        return '/dashboard';
+      default:
+        return '/';
+    }
+  };
+
   return (
     <>
       <style>{`
@@ -34,7 +57,6 @@ const Navbar = () => {
           backdrop-filter: blur(10px);
           border-bottom: 1px solid #dfe6e9;
           padding: 0 2rem;
-          
         }
 
         .navbar-inner {
@@ -44,7 +66,6 @@ const Navbar = () => {
           align-items: center;
           justify-content: space-between;
           height: 70px;
-         
         }
 
         .logo {
@@ -86,6 +107,9 @@ const Navbar = () => {
           font-size: 0.95rem;
           transition: all 0.3s ease;
           position: relative;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
         }
 
         .nav-links a:hover {
@@ -159,6 +183,13 @@ const Navbar = () => {
           gap: 0.5rem;
           font-size: 0.85rem;
           color: #2d3436;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-decoration: none;
+        }
+
+        .user-name:hover {
+          color: #1a5f2a;
         }
 
         .logout-btn {
@@ -189,7 +220,7 @@ const Navbar = () => {
             padding: 0 1rem;
           }
           .logo {
-          margin-left: 70px;
+            margin-left: 70px;
           }
           .mobile-toggle {
             display: flex;
@@ -246,37 +277,14 @@ const Navbar = () => {
           }
 
           /* stagger animation */
-          .nav-links.open li:nth-child(1) {
-            transition-delay: 0.05s;
-          }
-
-          .nav-links.open li:nth-child(2) {
-            transition-delay: 0.1s;
-          }
-
-          .nav-links.open li:nth-child(3) {
-            transition-delay: 0.15s;
-          }
-
-          .nav-links.open li:nth-child(4) {
-            transition-delay: 0.2s;
-          }
-
-          .nav-links.open li:nth-child(5) {
-            transition-delay: 0.25s;
-          }
-
-          .nav-links.open li:nth-child(6) {
-            transition-delay: 0.3s;
-          }
-
-          .nav-links.open li:nth-child(7) {
-            transition-delay: 0.35s;
-          }
-
-          .nav-links.open li:nth-child(8) {
-            transition-delay: 0.4s;
-          }
+          .nav-links.open li:nth-child(1) { transition-delay: 0.05s; }
+          .nav-links.open li:nth-child(2) { transition-delay: 0.1s; }
+          .nav-links.open li:nth-child(3) { transition-delay: 0.15s; }
+          .nav-links.open li:nth-child(4) { transition-delay: 0.2s; }
+          .nav-links.open li:nth-child(5) { transition-delay: 0.25s; }
+          .nav-links.open li:nth-child(6) { transition-delay: 0.3s; }
+          .nav-links.open li:nth-child(7) { transition-delay: 0.35s; }
+          .nav-links.open li:nth-child(8) { transition-delay: 0.4s; }
 
           .nav-links a,
           .nav-links span,
@@ -327,72 +335,72 @@ const Navbar = () => {
             onClick={closeMenu}
           >
             <div className="logo-icon">ACF</div>
-            Amanah Charity Foundation
+            
           </Link>
 
           <ul className={`nav-links ${mobileOpen ? 'open' : ''}`}>
 
+            {/* Public Links - Always Visible */}
             <li>
               <Link to="/" onClick={closeMenu}>
-                Home
+                <FaHome /> Home
               </Link>
             </li>
 
-            {user && (
-              <>
-                <li>
-                  <Link to="/donateGateway" onClick={closeMenu}>
-                    Donate
-                  </Link>
-                </li>
+            <li>
+              <Link to="/about" onClick={closeMenu}>
+                <FaInfoCircle /> About
+              </Link>
+            </li>
 
-                <li>
-                  <Link to="/vendors" onClick={closeMenu}>
-                    Vendors
-                  </Link>
-                </li>
+            <li>
+              <Link to="/contact" onClick={closeMenu}>
+                <FaEnvelope /> Contact
+              </Link>
+            </li>
 
-                {user.role === 'admin' && (
-                  <li>
-                    <Link to="/admin" onClick={closeMenu}>
-                      Admin
-                    </Link>
-                  </li>
-                )}
+            <li>
+              <Link to="/faq" onClick={closeMenu}>
+                <FaQuestionCircle /> FAQ
+              </Link>
+            </li>
 
-                {user.role === 'beneficiary' && (
-                  <li>
-                    <Link to="/beneficiary" onClick={closeMenu}>
-                      My Aid
-                    </Link>
-                  </li>
-                )}
-
-                {user.role === 'vendor' && (
-                  <li>
-                    <Link to="/vendor" onClick={closeMenu}>
-                      Vendor Portal
-                    </Link>
-                  </li>
-                )}
-
-                {(user.role === 'donor' ||
-                  user.role === 'corporate') && (
-                  <li>
-                    <Link to="/dashboard" onClick={closeMenu}>
-                      Dashboard
-                    </Link>
-                  </li>
-                )}
-              </>
+            {/* Role-based Links Only */}
+            {user?.role === 'admin' && (
+              <li>
+                <Link to="/admin" onClick={closeMenu}>
+                  Admin
+                </Link>
+              </li>
             )}
 
+            {user?.role === 'vendor' && (
+              <li>
+                <Link to="/vendor" onClick={closeMenu}>
+                  Vendor Portal
+                </Link>
+              </li>
+            )}
+
+            {(user?.role === 'donor' || user?.role === 'corporate') && (
+              <li>
+                <Link to="/dashboard" onClick={closeMenu}>
+                  Dashboard
+                </Link>
+              </li>
+            )}
+
+            {/* User Section - Name is now clickable */}
             {user ? (
               <>
                 <li>
-                  <span className="user-name">
+                  <Link 
+                    to={getDashboardPath()} 
+                    className="user-name"
+                    onClick={closeMenu}
+                  >
                     <FaUser /> {user.name}
-                  </span>
+                  </Link>
                 </li>
 
                 <li>
