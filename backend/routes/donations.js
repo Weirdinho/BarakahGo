@@ -4,11 +4,13 @@ const { body } = require('express-validator');
 const { auth } = require('../middleware/auth');
 const donationController = require('../controllers/donationController');
 
+const validCategories = ['zakat', 'sadaqah', 'waqf', 'food-aid', 'education', 'healthcare', 'general-fund'];
+
 // @route   POST /api/donations/initialize
 router.post('/initialize', auth, [
   body('amount').isNumeric().withMessage('Amount must be a number'),
   body('amount').custom(value => value >= 100).withMessage('Minimum donation is 100 NGN'),
-  body('category').isIn(['food', 'Sadaqat', 'Zakat', 'Waqf', 'general']).withMessage('Invalid category')
+  body('category').isIn(validCategories).withMessage('Invalid category')
 ], donationController.initializePayment);
 
 // @route   GET /api/donations/verify/:reference

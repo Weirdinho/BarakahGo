@@ -1,15 +1,68 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaHeart, FaAppleAlt, FaGraduationCap, FaHandHoldingUsd, FaMedkit, FaCheckCircle } from 'react-icons/fa';
+import { 
+  FaUtensils, 
+  FaGraduationCap, 
+  FaHandHoldingHeart, 
+  FaMosque, 
+  FaHeart,
+  FaWater,
+  FaHandHoldingUsd,
+  FaAppleAlt,
+  FaMedkit
+} from 'react-icons/fa';
 import api from '../services/api';
 
 const categories = [
-  { id: 'food', label: 'Food', icon: <FaAppleAlt />, desc: 'Nutritional support for families' },
-  { id: 'Sadaqat', label: 'Sadaqat', icon: <FaGraduationCap />, desc: 'School supplies and fees' },
-  { id: 'Zakat', label: 'Zakat', icon: <FaMedkit />, desc: 'Medical aid and supplies' },
-  { id: 'Waqf', label: 'Waqf', icon: <FaHandHoldingUsd />, desc: 'Direct cash assistance' },
-  { id: 'general', label: 'General', icon: <FaHeart />, desc: 'Where needed most' }
+  { 
+    id: 'zakat', 
+    label: 'Zakat', 
+    icon: <FaHandHoldingUsd />, 
+    desc: 'Obligatory alms for the poor and needy — purify your wealth' 
+  },
+  { 
+    id: 'sadaqah', 
+    label: 'Sadaqah', 
+    icon: <FaHeart />, 
+    desc: 'Voluntary charity for those in need — earn continuous reward' 
+  },
+  { 
+  id: 'sadaqah-jariyah', 
+  label: 'Sadaqah Jariyah', 
+  icon: <FaWater />, 
+  desc: 'Continuous reward — wells, mosques, schools, and sustainable projects' 
+},
+  { 
+    id: 'waqf', 
+    label: 'Waqf', 
+    icon: <FaMosque />, 
+    desc: 'Endowment for lasting community benefit — perpetual charity' 
+  },
+  { 
+    id: 'food', 
+    label: 'Food Aid', 
+    icon: <FaUtensils />, 
+    desc: 'Feed the hungry and provide meals to struggling families' 
+  },
+  { 
+    id: 'education', 
+    label: 'Education', 
+    icon: <FaGraduationCap />, 
+    desc: 'School fees, supplies, and scholarships for orphans and needy students' 
+  },
+  { 
+    id: 'healthcare', 
+    label: 'Healthcare', 
+    icon: <FaMedkit />, 
+    desc: 'Medical treatment, medicines, and hospital bills for the sick' 
+  },
+  { 
+    id: 'general', 
+    label: 'General Fund', 
+    icon: <FaHandHoldingHeart />, 
+    desc: 'Where needed most — urgent causes and emergency relief' 
+  }
 ];
 
 const amounts = [500, 1000, 5000, 10000, 20000, 50000];

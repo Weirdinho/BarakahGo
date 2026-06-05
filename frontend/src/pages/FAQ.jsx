@@ -7,7 +7,11 @@ const faqs = [
   },
   {
     question: 'How do I make a donation?',
-    answer: 'Simply create an account, click "Donate", choose a category (food, Sadaqat, Zakat, etc.), select an amount, and pay securely via Paystack. Your donation is instantly converted to e-vouchers.'
+    answer: 'Simply create an account, click "Donate", choose a category (zakat, sadaqah, waqf, food aid, education, or healthcare), select an amount, and pay securely via Paystack. Your donation is instantly converted to e-vouchers.'
+  },
+  {
+    question: 'What is the difference between Zakat, Sadaqah, and Waqf?',
+    answer: 'Zakat is obligatory alms (2.5% of wealth) given to specific categories of needy people. Sadaqah is voluntary charity given at any time and amount. Waqf is a permanent endowment where the principal is preserved and only the returns are used for charitable purposes.'
   },
   {
     question: 'Who can receive aid?',
@@ -27,7 +31,7 @@ const faqs = [
   },
   {
     question: 'What happens to unused vouchers?',
-    answer: 'Vouchers expire after 90 days if unused. The remaining value is returned to the donor or redirected to the general aid pool based on donor preference.'
+    answer: 'Vouchers expire after 90 days if unused. The remaining value is returned to the donor or redirected to the general fund based on donor preference.'
   },
   {
     question: 'How do I become a vendor?',

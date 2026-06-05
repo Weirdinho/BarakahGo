@@ -8,7 +8,7 @@ const applicationSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['food', 'Sadaqat', 'Zakat', 'Waqf', 'general'],
+    enum: ['zakat', 'sadaqah', 'waqf', 'food-aid', 'education', 'healthcare', 'general-fund'],
     required: true
   },
   amount: {

@@ -8,11 +8,13 @@ import VoucherCard from '../components/VoucherCard';
 import api from '../services/api';
 
 const categories = [
-  { id: 'food', label: 'Food & Groceries' },
-  { id: 'Sadaqat', label: 'Sadaqat' },
-  { id: 'Zakat', label: 'Zakat' },
-  { id: 'Waqf', label: 'Waqf Support' },
-  { id: 'general', label: 'General Aid' }
+  { id: 'zakat', label: 'Zakat' },
+  { id: 'sadaqah', label: 'Sadaqah' },
+  { id: 'waqf', label: 'Waqf Support' },
+  { id: 'food-aid', label: 'Food Aid' },
+  { id: 'education', label: 'Education' },
+  { id: 'healthcare', label: 'Healthcare' },
+  { id: 'general-fund', label: 'General Fund' }
 ];
 
 const BeneficiaryPage = () => {
@@ -21,7 +23,7 @@ const BeneficiaryPage = () => {
   const [applications, setApplications] = useState([]);
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [formData, setFormData] = useState({
-    category: 'food',
+    category: 'general-fund',
     amount: '',
     reason: ''
   });
@@ -53,7 +55,7 @@ const BeneficiaryPage = () => {
     try {
       await api.post('/donations/apply', formData);
       setShowApplyForm(false);
-      setFormData({ category: 'food', amount: '', reason: '' });
+      setFormData({ category: 'general-fund', amount: '', reason: '' });
       fetchData();
       alert('Application submitted successfully!');
     } catch (err) {
@@ -201,7 +203,7 @@ const BeneficiaryPage = () => {
                   alignItems: 'center'
                 }}>
                   <div>
-                    <h4 style={{ fontSize: '0.95rem' }}>{categories.find(c => c.id === app.category)?.label}</h4>
+                    <h4 style={{ fontSize: '0.95rem' }}>{categories.find(c => c.id === app.category)?.label || app.category}</h4>
                     <p style={{ fontSize: '0.8rem', color: '#636e72' }}>₦{app.amount.toLocaleString()}</p>
                     <p style={{ fontSize: '0.75rem', color: '#636e72' }}>{app.reason.substring(0, 40)}...</p>
                   </div>

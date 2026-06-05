@@ -8,7 +8,15 @@ const VendorLocator = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const categories = ['food', 'Sadaqat', 'Zakat', 'Waqf', 'general'];
+  const categories = [
+    { id: 'zakat', label: 'Zakat' },
+    { id: 'sadaqah', label: 'Sadaqah' },
+    { id: 'waqf', label: 'Waqf' },
+    { id: 'food-aid', label: 'Food Aid' },
+    { id: 'education', label: 'Education' },
+    { id: 'healthcare', label: 'Healthcare' },
+    { id: 'general-fund', label: 'General Fund' }
+  ];
 
   useEffect(() => {
     fetchVendors();
@@ -52,7 +60,7 @@ const VendorLocator = () => {
         >
           <option value="">All Categories</option>
           {categories.map(c => (
-            <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>
+            <option key={c.id} value={c.id}>{c.label}</option>
           ))}
         </select>
       </div>
@@ -107,7 +115,7 @@ const VendorLocator = () => {
                       fontSize: '0.75rem',
                       fontWeight: 600
                     }}>
-                      {cat}
+                      {categories.find(c => c.id === cat)?.label || cat}
                     </span>
                   ))}
                 </div>

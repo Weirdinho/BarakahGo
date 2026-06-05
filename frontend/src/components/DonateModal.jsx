@@ -1,15 +1,26 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaTimes, FaHeart, FaAppleAlt, FaGraduationCap, FaHandHoldingUsd, FaMedkit } from 'react-icons/fa';
+import { 
+  FaTimes, 
+  FaHeart, 
+  FaUtensils, 
+  FaGraduationCap, 
+  FaHandHoldingUsd, 
+  FaMedkit,
+  FaMosque,
+  FaHandHoldingHeart
+} from 'react-icons/fa';
 import api from '../services/api';
 
 const categories = [
-  { id: 'food', label: 'Food', icon: <FaAppleAlt /> },
-  { id: 'Sadaqat', label: 'Sadaqat', icon: <FaGraduationCap /> },
-  { id: 'Zakat', label: 'Zakat', icon: <FaMedkit /> },
-  { id: 'Waqf', label: 'Waqf', icon: <FaHandHoldingUsd /> },
-  { id: 'general', label: 'General', icon: <FaHeart /> }
+  { id: 'zakat', label: 'Zakat', icon: <FaHandHoldingUsd />, desc: 'Obligatory alms for the poor and needy' },
+  { id: 'sadaqah', label: 'Sadaqah', icon: <FaHeart />, desc: 'Voluntary charity for those in need' },
+  { id: 'waqf', label: 'Waqf', icon: <FaMosque />, desc: 'Endowment for lasting community benefit' },
+  { id: 'food-aid', label: 'Food Aid', icon: <FaUtensils />, desc: 'Feed the hungry and provide meals' },
+  { id: 'education', label: 'Education', icon: <FaGraduationCap />, desc: 'School fees, supplies, and scholarships' },
+  { id: 'healthcare', label: 'Healthcare', icon: <FaMedkit />, desc: 'Medical treatment and hospital bills' },
+  { id: 'general-fund', label: 'General Fund', icon: <FaHandHoldingHeart />, desc: 'Where needed most — urgent causes' }
 ];
 
 const amounts = [500, 1000, 5000, 10000, 20000, 50000];
@@ -18,7 +29,7 @@ const DonateModal = ({ onClose }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [amount, setAmount] = useState('');
-  const [category, setCategory] = useState('general');
+  const [category, setCategory] = useState('general-fund');
   const [customAmount, setCustomAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -153,6 +164,7 @@ const DonateModal = ({ onClose }) => {
                   type="button"
                   className={`category-btn ${category === cat.id ? 'active' : ''}`}
                   onClick={() => setCategory(cat.id)}
+                  title={cat.desc}
                 >
                   <span className="icon">{cat.icon}</span>
                   {cat.label}

@@ -10,11 +10,11 @@ const steps = [
   {
     number: '01',
     title: 'Choose & Donate',
-    description: 'Select a cause close to your heart — food, Sadaqat, Zakat, or Waqf support. Enter your donation amount and pay securely via Paystack. Every donation is tracked from the moment it leaves your account.',
+    description: 'Select a cause close to your heart — zakat, sadaqah, waqf, food aid, education, or healthcare. Enter your donation amount and pay securely via Paystack. Every donation is tracked from the moment it leaves your account.',
     icon: <FaDonate />,
     color: '#1a5f2a',
     details: [
-      'Browse categories: Food, Sadaqat, Zakat, Waqf, General',
+      'Browse categories: Zakat, Sadaqah, Waqf, Food Aid, Education, Healthcare, General Fund',
       'Select preset amounts or enter a custom donation',
       'Pay with card, bank transfer, or USSD via Paystack',
       'Receive instant confirmation and tax-deductible receipt'
@@ -29,7 +29,7 @@ const steps = [
     details: [
       'Unique voucher codes generated with cryptographic security',
       'QR codes for quick scanning at vendor locations',
-      'Vouchers tied to specific categories (food, Sadaqat, etc.)',
+      'Vouchers tied to specific categories (zakat, sadaqah, etc.)',
       '90-day expiry with automatic renewal options'
     ]
   },
@@ -67,7 +67,7 @@ const features = [
     title: 'For Donors',
     points: [
       'Track every naira from donation to redemption',
-      'Choose exactly where your money goes',
+      'Choose exactly where your money goes — zakat, sadaqah, waqf, and more',
       'Receive impact reports and success stories',
       'Option to donate anonymously'
     ]

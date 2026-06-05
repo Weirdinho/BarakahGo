@@ -1,39 +1,110 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
+import { 
+  FaDonate, FaCreditCard, FaQrcode, FaStore, 
+  FaUserCheck, FaChartLine, FaShieldAlt, FaHandshake,
+  FaArrowRight, FaCheckCircle
+} from 'react-icons/fa';
 
-const openings = [
+const steps = [
   {
-    title: 'Senior Full-Stack Developer',
-    department: 'Engineering',
-    location: 'Lagos, Nigeria (Remote)',
-    type: 'Full-time'
+    number: '01',
+    title: 'Choose & Donate',
+    description: 'Select a cause close to your heart — zakat, sadaqah, waqf, food aid, education, or healthcare. Enter your donation amount and pay securely via Paystack. Every donation is tracked from the moment it leaves your account.',
+    icon: <FaDonate />,
+    color: '#1a5f2a',
+    details: [
+      'Browse categories: Zakat, Sadaqah, Waqf, Food Aid, Education, Healthcare, General Fund',
+      'Select preset amounts or enter a custom donation',
+      'Pay with card, bank transfer, or USSD via Paystack',
+      'Receive instant confirmation and tax-deductible receipt'
+    ]
   },
   {
-    title: 'Product Designer',
-    department: 'Design',
-    location: 'Lagos, Nigeria (Remote)',
-    type: 'Full-time'
+    number: '02',
+    title: 'E-Voucher Generated',
+    description: 'Our system instantly converts your donation into unique, secure e-vouchers. Each voucher has a QR code and alphanumeric code, making it impossible to counterfeit or duplicate.',
+    icon: <FaCreditCard />,
+    color: '#2d8a3e',
+    details: [
+      'Unique voucher codes generated with cryptographic security',
+      'QR codes for quick scanning at vendor locations',
+      'Vouchers tied to specific categories (zakat, sadaqah, etc.)',
+      '90-day expiry with automatic renewal options'
+    ]
   },
   {
-    title: 'Partnerships Manager',
-    department: 'Business Development',
-    location: 'Lagos, Nigeria',
-    type: 'Full-time'
+    number: '03',
+    title: 'Beneficiary Receives',
+    description: 'Approved beneficiaries receive vouchers via SMS or email. No bank account required — making aid accessible to the unbanked and underserved communities.',
+    icon: <FaQrcode />,
+    color: '#f4a261',
+    details: [
+      'SMS delivery to any mobile phone',
+      'Email delivery with printable voucher',
+      'No smartphone or bank account needed',
+      'Beneficiaries can check balance anytime'
+    ]
   },
   {
-    title: 'Customer Success Specialist',
-    department: 'Operations',
-    location: 'Remote',
-    type: 'Full-time'
-  },
-  {
-    title: 'Data Analyst',
-    department: 'Engineering',
-    location: 'Remote',
-    type: 'Contract'
+    number: '04',
+    title: 'Redeem at Vendor',
+    description: 'Beneficiaries visit any approved vendor near them, present their voucher (QR code or code), and receive goods or services instantly. Vendors get paid within 2-3 business days.',
+    icon: <FaStore />,
+    color: '#e76f51',
+    details: [
+      'Find nearest vendor via in-app locator',
+      'Show QR code or enter voucher code',
+      'Vendor verifies and processes redemption',
+      'Beneficiary receives goods/services immediately'
+    ]
   }
 ];
 
-const Careers = () => {
+const features = [
+  {
+    icon: <FaUserCheck />,
+    title: 'For Donors',
+    points: [
+      'Track every naira from donation to redemption',
+      'Choose exactly where your money goes — zakat, sadaqah, waqf, and more',
+      'Receive impact reports and success stories',
+      'Option to donate anonymously'
+    ]
+  },
+  {
+    icon: <FaChartLine />,
+    title: 'For Beneficiaries',
+    points: [
+      'Apply for aid online or via SMS',
+      'Receive vouchers without a bank account',
+      'Choose nearest vendor for convenience',
+      'Dignity of choice — pick what you need'
+    ]
+  },
+  {
+    icon: <FaShieldAlt />,
+    title: 'For Vendors',
+    points: [
+      'Join verified network to grow customer base',
+      'Get paid directly to your bank account',
+      'Simple QR code scanning for redemptions',
+      'Real-time dashboard of all transactions'
+    ]
+  },
+  {
+    icon: <FaHandshake />,
+    title: 'For Partners',
+    points: [
+      'Launch branded CSR campaigns',
+      'Full transparency and audit trails',
+      'API integration for bulk operations',
+      'Custom reporting and analytics'
+    ]
+  }
+];
+
+const HowItWorksPage = () => {
   return (
     <>
       <style>{`
@@ -55,158 +126,237 @@ const Careers = () => {
           margin: 0 auto;
         }
         .page-content {
-          max-width: 900px;
+          max-width: 1100px;
           margin: 0 auto;
           padding: 60px 2rem;
         }
-        .page-content h2 {
+        .section-header {
+          text-align: center;
+          margin-bottom: 3rem;
+        }
+        .section-header h2 {
           font-size: 2rem;
           color: #1a5f2a;
-          margin-bottom: 1.5rem;
-          margin-top: 3rem;
-        }
-        .page-content h2:first-child {
-          margin-top: 0;
-        }
-        .page-content p {
-          color: #636e72;
-          line-height: 1.8;
-          margin-bottom: 1.5rem;
-          font-size: 1.05rem;
-        }
-        .benefits-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 1.5rem;
-          margin: 2rem 0;
-        }
-        .benefit-card {
-          background: #f8f9fa;
-          padding: 1.5rem;
-          border-radius: 12px;
-        }
-        .benefit-card h4 {
-          color: #1a5f2a;
           margin-bottom: 0.5rem;
         }
-        .benefit-card p {
-          font-size: 0.9rem;
-          margin-bottom: 0;
+        .section-header p {
+          color: #636e72;
         }
-        .job-listing {
+        .step-card {
+          display: flex;
+          grid-template-columns: 80px 1fr;
+          gap: 2rem;
           background: white;
           border: 1px solid #dfe6e9;
-          border-radius: 12px;
-          padding: 1.5rem;
-          margin-bottom: 1rem;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
+          border-radius: 16px;
+          padding: 2.5rem;
+          margin-bottom: 2rem;
           transition: all 0.3s ease;
+          position: relative;
+          overflow: hidden;
         }
-        .job-listing:hover {
+        .step-card:hover {
           border-color: #1a5f2a;
-          box-shadow: 0 4px 12px rgba(26, 95, 42, 0.1);
+          box-shadow: 0 10px 40px rgba(26, 95, 42, 0.1);
+          transform: translateY(-3px);
         }
-        .job-info h3 {
+        .step-number {
+          font-size: 3rem;
+          font-weight: 800;
+          color: rgba(26, 95, 42, 0.1);
+          line-height: 1;
+          display:none;
+        }
+        .step-icon {
+          width: 50px;
+          height: 50px;
+          
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.25rem;
+          color: white;
+          margin-bottom: 1rem;
+        }
+        .step-content h3 {
+          font-size: 1.4rem;
           color: #2d3436;
+          margin-bottom: 0.75rem;
+        }
+          .step-content{
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .step-content p {
+          color: #636e72;
+          line-height: 1.7;
+          margin-bottom: 1.5rem;
+        }
+        .step-details {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          color: #636e72;
+          font-size: 0.9rem;
+        }
+        .detail-icon {
+          color: #1a5f2a;
+          font-size: 0.85rem;
+          flex-shrink: 0;
+        }
+        
+        .features-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 2rem;
+          margin-top: 2rem;
+        }
+        .feature-card {
+          background: #f8f9fa;
+          border-radius: 16px;
+          padding: 2rem;
+        }
+        .feature-card h3 {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          color: #1a5f2a;
+          margin-bottom: 1rem;
+          font-size: 1.2rem;
+        }
+        .feature-card ul {
+          list-style: none;
+          padding: 0;
+          margin: 0;
+        }
+        .feature-card li {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          color: #636e72;
+          font-size: 0.9rem;
           margin-bottom: 0.5rem;
         }
-        .job-meta {
-          display: flex;
-          gap: 1rem;
-          font-size: 0.85rem;
-          color: #636e72;
-        }
-        .job-meta span {
-          background: #f8f9fa;
-          padding: 0.25rem 0.75rem;
-          border-radius: 50px;
-        }
-        .apply-btn {
-          background: #1a5f2a;
+        .cta-section {
+          background: linear-gradient(135deg, #1a5f2a 0%, #2d8a3e 100%);
+          border-radius: 16px;
+          padding: 3rem;
+          text-align: center;
           color: white;
-          border: none;
-          padding: 0.75rem 1.5rem;
+          margin-top: 3rem;
+        }
+        .cta-section h2 {
+          font-size: 2rem;
+          margin-bottom: 1rem;
+        }
+        .cta-section p {
+          opacity: 0.9;
+          margin-bottom: 1.5rem;
+          max-width: 500px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .cta-btn {
+          background: white;
+          color: #1a5f2a;
+          padding: 1rem 2rem;
           border-radius: 50px;
           font-weight: 600;
-          cursor: pointer;
+          text-decoration: none;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
           transition: all 0.3s ease;
         }
-        .apply-btn:hover {
-          background: #0f3d1a;
+        .cta-btn:hover {
           transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
         @media (max-width: 768px) {
-          .benefits-grid { grid-template-columns: 1fr; }
-          .job-listing { flex-direction: column; align-items: flex-start; gap: 1rem; }
+          .step-card { grid-template-columns: 1fr; }
+          .features-grid { grid-template-columns: 1fr; }
           .page-hero h1 { font-size: 2rem; }
         }
       `}</style>
 
       <section className="page-hero">
-        <h1>Careers at Amanah Charity Foundation</h1>
-        <p>Join us in building technology that makes a real difference in people's lives.</p>
+        <h1>How Amanah Charity Foundation Works</h1>
+        <p>From your generous donation to a beneficiary's essential needs — see the journey every contribution takes.</p>
       </section>
 
       <div className="page-content">
-        <h2>Why Work With Us?</h2>
-        <p>
-          At Amanah Charity Foundation, we're not just building software — we're building a movement. 
-          Every line of code, every design decision, and every partnership we forge 
-          directly impacts communities in need across Africa.
-        </p>
-
-        <div className="benefits-grid">
-          <div className="benefit-card">
-            <h4>Meaningful Impact</h4>
-            <p>Your work directly helps people access food, Sadaqat, and healthcare.</p>
-          </div>
-          <div className="benefit-card">
-            <h4>Remote First</h4>
-            <p>Work from anywhere. We believe great talent isn't bound by location.</p>
-          </div>
-          <div className="benefit-card">
-            <h4>Growth & Learning</h4>
-            <p>Annual learning budget, mentorship, and clear career progression paths.</p>
-          </div>
-          <div className="benefit-card">
-            <h4>Health & Wellness</h4>
-            <p>Comprehensive health insurance and mental health support.</p>
-          </div>
-          <div className="benefit-card">
-            <h4>Competitive Pay</h4>
-            <p>Salary benchmarks against global standards, not just local markets.</p>
-          </div>
-          <div className="benefit-card">
-            <h4>Flexible Time Off</h4>
-            <p>Unlimited PTO policy. We trust you to manage your time.</p>
-          </div>
+        <div className="section-header">
+          <h2>The Journey of a Donation</h2>
+          <p>Four simple steps that create lasting impact</p>
         </div>
 
-        <h2>Open Positions</h2>
-        {openings.map((job, i) => (
-          <div className="job-listing" key={i}>
-            <div className="job-info">
-              <h3>{job.title}</h3>
-              <div className="job-meta">
-                <span>{job.department}</span>
-                <span>{job.location}</span>
-                <span>{job.type}</span>
+        {steps.map((step, i) => (
+          <React.Fragment key={i}>
+            <div className="step-card">
+              <div>
+                <div className="step-number">{step.number}</div>
+              </div>
+              <div className="step-content">
+                <div 
+                  className="step-icon" 
+                  style={{ background:"#1a5f2a" }}
+                >
+                  {step.icon}
+                </div>
+                <h3>{step.title}</h3>
+                <p>{step.description}</p>
+                <div className="step-details">
+                  {step.details.map((detail, j) => (
+                    <div className="detail-item" key={j}>
+                      <FaCheckCircle className="detail-icon" />
+                      <span>{detail}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
-            <button className="apply-btn">Apply Now</button>
-          </div>
+           
+          </React.Fragment>
         ))}
 
-        <h2>Don't See Your Role?</h2>
-        <p>
-          We're always looking for exceptional talent. Send your resume and a note about 
-          what you'd like to work on to careers@Amanah Charity Foundation.com.
-        </p>
+        <div className="section-header" style={{ marginTop: '4rem' }}>
+          <h2>Built for Everyone</h2>
+          <p>How different users benefit from our platform</p>
+        </div>
+
+        <div className="features-grid">
+          {features.map((feature, i) => (
+            <div className="feature-card" key={i}>
+              <h3>{feature.icon} {feature.title}</h3>
+              <ul>
+                {feature.points.map((point, j) => (
+                  <li key={j}>
+                    <FaCheckCircle style={{ color: '#1a5f2a', fontSize: '0.75rem' }} />
+                    {point}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+
+        <div className="cta-section">
+          <h2>Ready to Make a Difference?</h2>
+          <p>Join thousands of donors who are changing lives through smart giving.</p>
+          <Link to="/donateGateway" className="cta-btn">
+            Start Giving Now <FaArrowRight />
+          </Link>
+        </div>
       </div>
     </>
   );
 };
 
-export default Careers;
+export default HowItWorksPage;
