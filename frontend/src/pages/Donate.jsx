@@ -10,7 +10,8 @@ import {
   FaWater,
   FaHandHoldingUsd,
   FaAppleAlt,
-  FaMedkit
+  FaMedkit,
+  FaCheckCircle
 } from 'react-icons/fa';
 import api from '../services/api';
 

@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   FaUsers, FaDonate, FaTicketAlt, FaStore, FaClipboardList,
   FaTrash, FaEdit, FaCheck, FaTimes, FaChartBar, FaSignOutAlt,
-  FaBars, FaTimes as FaClose
+  FaBars, FaTimes as FaClose, FaFilter
 } from 'react-icons/fa';
 import api from '../services/api';
 
@@ -22,6 +22,10 @@ const AdminDashboard = () => {
   const [vouchers, setVouchers] = useState([]);
   const [pendingVendors, setPendingVendors] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // User filter state
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     fetchAllData();
@@ -105,6 +109,25 @@ const AdminDashboard = () => {
 
   const closeSidebar = () => setSidebarOpen(false);
 
+  // Filter users based on role and search query
+  const filteredUsers = users.filter(u => {
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchesSearch = !searchQuery || 
+      u.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesRole && matchesSearch;
+  });
+
+  // Count users by role for filter badges
+  const roleCounts = {
+    all: users.length,
+    donor: users.filter(u => u.role === 'donor').length,
+    corporate: users.filter(u => u.role === 'corporate').length,
+    beneficiary: users.filter(u => u.role === 'beneficiary').length,
+    vendor: users.filter(u => u.role === 'vendor').length,
+    admin: users.filter(u => u.role === 'admin').length,
+  };
+
   const renderOverview = () => (
     <div>
       <div className="admin-stats-grid">
@@ -178,7 +201,48 @@ const AdminDashboard = () => {
 
   const renderUsers = () => (
     <div>
-      <h3 style={{ marginBottom: '1rem' }}>All Users ({users.length})</h3>
+      <h3 style={{ marginBottom: '1rem' }}>All Users</h3>
+      
+      {/* Filter Bar */}
+      <div className="filter-bar">
+        <div className="filter-group">
+          <FaFilter className="filter-icon" />
+          <div className="filter-buttons">
+            {[
+              { id: 'all', label: 'All', count: roleCounts.all },
+              { id: 'donor', label: 'Donors', count: roleCounts.donor },
+              { id: 'corporate', label: 'Corporate', count: roleCounts.corporate },
+              { id: 'beneficiary', label: 'Beneficiaries', count: roleCounts.beneficiary },
+              { id: 'vendor', label: 'Vendors', count: roleCounts.vendor },
+              { id: 'admin', label: 'Admins', count: roleCounts.admin },
+            ].map(role => (
+              <button
+                key={role.id}
+                className={`filter-btn ${roleFilter === role.id ? 'active' : ''}`}
+                onClick={() => setRoleFilter(role.id)}
+              >
+                {role.label}
+                <span className="filter-count">{role.count}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="search-group">
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="search-input"
+          />
+        </div>
+      </div>
+
+      <div className="results-info">
+        Showing {filteredUsers.length} of {users.length} users
+      </div>
+
       <div className="admin-table-container">
         <table className="admin-table">
           <thead>
@@ -191,31 +255,39 @@ const AdminDashboard = () => {
             </tr>
           </thead>
           <tbody>
-            {users.map(u => (
-              <tr key={u._id}>
-                <td>{u.name}</td>
-                <td>{u.email}</td>
-                <td>
-                  <select 
-                    value={u.role} 
-                    onChange={(e) => handleUpdateRole(u._id, e.target.value)}
-                    className="role-select"
-                  >
-                    <option value="donor">Donor</option>
-                    <option value="corporate">Corporate</option>
-                    <option value="beneficiary">Beneficiary</option>
-                    <option value="vendor">Vendor</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </td>
-                <td>{new Date(u.createdAt).toLocaleDateString()}</td>
-                <td>
-                  <button onClick={() => handleDeleteUser(u._id)} className="action-btn delete">
-                    <FaTrash />
-                  </button>
+            {filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan="5" style={{ textAlign: 'center', padding: '2rem', color: '#64748b' }}>
+                  No users found matching your filters.
                 </td>
               </tr>
-            ))}
+            ) : (
+              filteredUsers.map(u => (
+                <tr key={u._id}>
+                  <td>{u.name}</td>
+                  <td>{u.email}</td>
+                  <td>
+                    <select 
+                      value={u.role} 
+                      onChange={(e) => handleUpdateRole(u._id, e.target.value)}
+                      className="role-select"
+                    >
+                      <option value="donor">Donor</option>
+                      <option value="corporate">Corporate</option>
+                      <option value="beneficiary">Beneficiary</option>
+                      <option value="vendor">Vendor</option>
+                      <option value="admin">Admin</option>
+                    </select>
+                  </td>
+                  <td>{new Date(u.createdAt).toLocaleDateString()}</td>
+                  <td>
+                    <button onClick={() => handleDeleteUser(u._id)} className="action-btn delete">
+                      <FaTrash />
+                    </button>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -497,6 +569,103 @@ const AdminDashboard = () => {
           color: #64748b;
         }
 
+        /* FILTER BAR STYLES */
+        .filter-bar {
+          background: white;
+          border-radius: 12px;
+          padding: 1rem 1.5rem;
+          margin-bottom: 1rem;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .filter-group {
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+
+        .filter-icon {
+          color: #1a5f2a;
+          font-size: 1rem;
+        }
+
+        .filter-buttons {
+          display: flex;
+          gap: 0.5rem;
+          flex-wrap: wrap;
+        }
+
+        .filter-btn {
+          background: #f1f5f9;
+          border: 2px solid transparent;
+          color: #64748b;
+          padding: 0.5rem 1rem;
+          border-radius: 50px;
+          font-size: 0.85rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+        }
+
+        .filter-btn:hover {
+          background: #e2e8f0;
+          color: #334155;
+        }
+
+        .filter-btn.active {
+          background: #1a5f2a;
+          color: white;
+          border-color: #1a5f2a;
+        }
+
+        .filter-count {
+          background: rgba(255,255,255,0.2);
+          padding: 0.15rem 0.5rem;
+          border-radius: 50px;
+          font-size: 0.75rem;
+          font-weight: 600;
+        }
+
+        .filter-btn.active .filter-count {
+          background: rgba(255,255,255,0.3);
+        }
+
+        .search-group {
+          flex: 1;
+          min-width: 200px;
+          max-width: 300px;
+        }
+
+        .search-input {
+          width: 100%;
+          padding: 0.6rem 1rem;
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 0.9rem;
+          transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+          outline: none;
+          border-color: #1a5f2a;
+        }
+
+        .results-info {
+          font-size: 0.85rem;
+          color: #64748b;
+          margin-bottom: 1rem;
+          font-weight: 500;
+        }
+
         .admin-table-container {
           background: white;
           border-radius: 12px;
@@ -609,6 +778,15 @@ const AdminDashboard = () => {
         @media (max-width: 768px) {
           .admin-stats-grid {
             grid-template-columns: 1fr;
+          }
+          
+          .filter-bar {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          
+          .search-group {
+            max-width: 100%;
           }
         }
       `}</style>

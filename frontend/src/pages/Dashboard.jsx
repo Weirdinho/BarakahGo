@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { FaDonate, FaTicketAlt, FaStore, FaHeart } from 'react-icons/fa';
+import { FaDonate, FaTicketAlt, FaStore, FaHeart, FaPlus, FaHandHoldingHeart } from 'react-icons/fa';
 import VoucherCard from '../components/VoucherCard';
+import DonateModal from '../components/DonateModal';
 import api from '../services/api';
 
 const Dashboard = () => {
@@ -9,6 +10,7 @@ const Dashboard = () => {
   const [donations, setDonations] = useState([]);
   const [vouchers, setVouchers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showDonateModal, setShowDonateModal] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -49,6 +51,20 @@ const Dashboard = () => {
             <h1>Welcome back, {user?.name?.split(' ')[0]}</h1>
             <p style={{ color: '#636e72' }}>Track your donations and vouchers</p>
           </div>
+          <button 
+            className="btn btn-primary"
+            onClick={() => setShowDonateModal(true)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '50px',
+              fontWeight: '600'
+            }}
+          >
+            <FaPlus /> Donate Now
+          </button>
         </div>
 
         <div className="stats-grid">
@@ -77,6 +93,13 @@ const Dashboard = () => {
               <div style={{ textAlign: 'center', padding: '2rem', color: '#636e72' }}>
                 <FaDonate style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }} />
                 <p>No donations yet. Start giving today!</p>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => setShowDonateModal(true)}
+                  style={{ marginTop: '1rem' }}
+                >
+                  <FaHandHoldingHeart /> Make Your First Donation
+                </button>
               </div>
             ) : (
               donations.slice(0, 5).map(donation => (
@@ -117,6 +140,11 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Donate Modal */}
+      {showDonateModal && (
+        <DonateModal onClose={() => setShowDonateModal(false)} />
+      )}
     </div>
   );
 };
