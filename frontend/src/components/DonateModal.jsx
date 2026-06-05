@@ -6,9 +6,9 @@ import api from '../services/api';
 
 const categories = [
   { id: 'food', label: 'Food', icon: <FaAppleAlt /> },
-  { id: 'education', label: 'Education', icon: <FaGraduationCap /> },
-  { id: 'healthcare', label: 'Healthcare', icon: <FaMedkit /> },
-  { id: 'financial', label: 'Financial', icon: <FaHandHoldingUsd /> },
+  { id: 'Sadaqat', label: 'Sadaqat', icon: <FaGraduationCap /> },
+  { id: 'Zakat', label: 'Zakat', icon: <FaMedkit /> },
+  { id: 'Waqf', label: 'Waqf', icon: <FaHandHoldingUsd /> },
   { id: 'general', label: 'General', icon: <FaHeart /> }
 ];
 

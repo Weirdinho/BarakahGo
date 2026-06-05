@@ -9,9 +9,9 @@ import api from '../services/api';
 
 const categories = [
   { id: 'food', label: 'Food & Groceries' },
-  { id: 'education', label: 'Education' },
-  { id: 'healthcare', label: 'Healthcare' },
-  { id: 'financial', label: 'Financial Support' },
+  { id: 'Sadaqat', label: 'Sadaqat' },
+  { id: 'Zakat', label: 'Zakat' },
+  { id: 'Waqf', label: 'Waqf Support' },
   { id: 'general', label: 'General Aid' }
 ];
 

@@ -7,7 +7,7 @@ const faqs = [
   },
   {
     question: 'How do I make a donation?',
-    answer: 'Simply create an account, click "Donate", choose a category (food, education, healthcare, etc.), select an amount, and pay securely via Paystack. Your donation is instantly converted to e-vouchers.'
+    answer: 'Simply create an account, click "Donate", choose a category (food, Sadaqat, Zakat, etc.), select an amount, and pay securely via Paystack. Your donation is instantly converted to e-vouchers.'
   },
   {
     question: 'Who can receive aid?',

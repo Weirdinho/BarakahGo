@@ -8,7 +8,7 @@ const VendorLocator = () => {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
 
-  const categories = ['food', 'education', 'healthcare', 'financial', 'general'];
+  const categories = ['food', 'Sadaqat', 'Zakat', 'Waqf', 'general'];
 
   useEffect(() => {
     fetchVendors();

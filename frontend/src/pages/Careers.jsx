@@ -160,7 +160,7 @@ const Careers = () => {
         <div className="benefits-grid">
           <div className="benefit-card">
             <h4>Meaningful Impact</h4>
-            <p>Your work directly helps people access food, education, and healthcare.</p>
+            <p>Your work directly helps people access food, Sadaqat, and healthcare.</p>
           </div>
           <div className="benefit-card">
             <h4>Remote First</h4>

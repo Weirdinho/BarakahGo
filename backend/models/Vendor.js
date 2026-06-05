@@ -28,7 +28,7 @@ const vendorSchema = new mongoose.Schema({
   },
   categories: [{
     type: String,
-    enum: ['food', 'education', 'healthcare', 'financial', 'general']
+    enum: ['food', 'Sadaqat', 'Zakat', 'Waqf', 'general']
   }],
   isApproved: {
     type: Boolean,

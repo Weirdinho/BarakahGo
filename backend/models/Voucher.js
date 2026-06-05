@@ -26,7 +26,7 @@ const voucherSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['food', 'education', 'healthcare', 'financial', 'general'],
+    enum: ['food', 'Sadaqat', 'Zakat', 'Waqf', 'general'],
     required: true
   },
   status: {

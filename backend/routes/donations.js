@@ -8,7 +8,7 @@ const donationController = require('../controllers/donationController');
 router.post('/initialize', auth, [
   body('amount').isNumeric().withMessage('Amount must be a number'),
   body('amount').custom(value => value >= 100).withMessage('Minimum donation is 100 NGN'),
-  body('category').isIn(['food', 'education', 'healthcare', 'financial', 'general']).withMessage('Invalid category')
+  body('category').isIn(['food', 'Sadaqat', 'Zakat', 'Waqf', 'general']).withMessage('Invalid category')
 ], donationController.initializePayment);
 
 // @route   GET /api/donations/verify/:reference

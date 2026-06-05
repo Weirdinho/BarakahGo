@@ -17,7 +17,7 @@ const donationSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['food', 'education', 'healthcare', 'financial', 'general'],
+    enum: ['food', 'Sadaqat', 'Zakat', 'Waqf', 'general'],
     default: 'general'
   },
   paystackReference: {

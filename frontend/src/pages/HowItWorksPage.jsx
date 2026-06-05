@@ -10,11 +10,11 @@ const steps = [
   {
     number: '01',
     title: 'Choose & Donate',
-    description: 'Select a cause close to your heart — food, education, healthcare, or financial support. Enter your donation amount and pay securely via Paystack. Every donation is tracked from the moment it leaves your account.',
+    description: 'Select a cause close to your heart — food, Sadaqat, Zakat, or Waqf support. Enter your donation amount and pay securely via Paystack. Every donation is tracked from the moment it leaves your account.',
     icon: <FaDonate />,
     color: '#1a5f2a',
     details: [
-      'Browse categories: Food, Education, Healthcare, Financial, General',
+      'Browse categories: Food, Sadaqat, Zakat, Waqf, General',
       'Select preset amounts or enter a custom donation',
       'Pay with card, bank transfer, or USSD via Paystack',
       'Receive instant confirmation and tax-deductible receipt'
@@ -29,7 +29,7 @@ const steps = [
     details: [
       'Unique voucher codes generated with cryptographic security',
       'QR codes for quick scanning at vendor locations',
-      'Vouchers tied to specific categories (food, education, etc.)',
+      'Vouchers tied to specific categories (food, Sadaqat, etc.)',
       '90-day expiry with automatic renewal options'
     ]
   },

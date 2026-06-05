@@ -40,7 +40,7 @@ const Features = () => {
       <div className="section-header">
         <h2>Why Choose Amanah Charity Foundation?</h2>
         <p>
-          Whether food, education, or financial support, give smart with Amanah Charity Foundation!
+          Whether food, Sadaqat, or Waqf support, give smart with Amanah Charity Foundation!
           Corporate giving with your own branded aid e-vouchers? Talk to us!
         </p>
       </div>

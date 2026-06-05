@@ -6,9 +6,9 @@ import api from '../services/api';
 
 const categories = [
   { id: 'food', label: 'Food', icon: <FaAppleAlt />, desc: 'Nutritional support for families' },
-  { id: 'education', label: 'Education', icon: <FaGraduationCap />, desc: 'School supplies and fees' },
-  { id: 'healthcare', label: 'Healthcare', icon: <FaMedkit />, desc: 'Medical aid and supplies' },
-  { id: 'financial', label: 'Financial', icon: <FaHandHoldingUsd />, desc: 'Direct cash assistance' },
+  { id: 'Sadaqat', label: 'Sadaqat', icon: <FaGraduationCap />, desc: 'School supplies and fees' },
+  { id: 'Zakat', label: 'Zakat', icon: <FaMedkit />, desc: 'Medical aid and supplies' },
+  { id: 'Waqf', label: 'Waqf', icon: <FaHandHoldingUsd />, desc: 'Direct cash assistance' },
   { id: 'general', label: 'General', icon: <FaHeart />, desc: 'Where needed most' }
 ];
 
