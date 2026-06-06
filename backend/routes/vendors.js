@@ -15,4 +15,4 @@ router.post('/', auth, vendorController.registerVendor);
 // @desc    Approve vendor (admin only)
 router.put('/:id/approve', auth, adminOnly, vendorController.approveVendor);
 
-module.exports = router;
+module.exports = router; 
