@@ -27,16 +27,15 @@ connectDB();
 const app = express();
 
 // ======================
-// CORS - ALLOW ALL ORIGINS FOR NOW (FIX FOR RENDER)
+// CORS
 // ======================
 app.use(cors({
-  origin: true, // Reflects the request origin - allows all
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Handle preflight for ALL routes
 app.options('*', cors());
 
 // ======================
@@ -67,8 +66,28 @@ app.use('/api/donations', donationRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/contact', contactRoutes);    // ✅ Use the imported contactRoutes
-app.use('/api/payments', paymentRoutes);   // ✅ External paymentRoutes
+app.use('/api/contact', contactRoutes);
+app.use('/api/payments', paymentRoutes);
+
+// ======================
+// DEBUG: Log all registered routes
+// ======================
+console.log('\n📋 REGISTERED ROUTES:');
+app._router.stack.forEach((middleware) => {
+  if (middleware.route) {
+    const methods = Object.keys(middleware.route.methods).join(',').toUpperCase();
+    console.log(`  ${methods} ${middleware.route.path}`);
+  } else if (middleware.name === 'router' && middleware.handle?.stack) {
+    const basePath = middleware.regexp?.toString().includes('auth') ? '/api/auth' : '';
+    middleware.handle.stack.forEach((handler) => {
+      if (handler.route) {
+        const methods = Object.keys(handler.route.methods).join(',').toUpperCase();
+        console.log(`  ${methods} ${basePath}${handler.route.path}`);
+      }
+    });
+  }
+});
+console.log('');
 
 // ======================
 // Health check
@@ -99,7 +118,6 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Use Render's PORT
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
