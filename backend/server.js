@@ -63,6 +63,15 @@ app.get('/test', (req, res) => {
 // API Routes
 // ======================
 app.use('/api/auth', authRoutes);
+// DEBUG: Log auth routes
+console.log('\n📋 AUTH ROUTES:');
+authRoutes.stack.forEach((layer) => {
+  if (layer.route) {
+    const methods = Object.keys(layer.route.methods).join(',').toUpperCase();
+    console.log(`   ${methods} /api/auth${layer.route.path}`);
+  }
+});
+console.log('');
 app.use('/api/donations', donationRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/vendors', vendorRoutes);
