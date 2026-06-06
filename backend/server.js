@@ -3,7 +3,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config(); 
 
 // Crash handler
 process.on('uncaughtException', (err) => {
@@ -27,15 +27,16 @@ connectDB();
 const app = express();
 
 // ======================
-// CORS
+// CORS - ALLOW ALL ORIGINS FOR NOW (FIX FOR RENDER)
 // ======================
 app.use(cors({
-  origin: true,
+  origin: true, // Reflects the request origin - allows all
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
+// Handle preflight for ALL routes
 app.options('*', cors());
 
 // ======================
@@ -61,54 +62,13 @@ app.get('/test', (req, res) => {
 // ======================
 // API Routes
 // ======================
-// ======================
-// API Routes
-// ======================
-console.log('\n🔍 Loading routes...\n');
-
-
-console.log('✅ authRoutes loaded from:', require.resolve('./routes/auth'));
-
-app.use('/api/auth', authRoutes);
-
-// DEBUG: Print all auth routes
-console.log('\n📋 AUTH ROUTES REGISTERED:');
-authRoutes.stack.forEach((layer) => {
-  if (layer.route) {
-    const methods = Object.keys(layer.route.methods)
-      .map(m => m.toUpperCase())
-      .join(',');
-    console.log(`   ${methods} /api/auth${layer.route.path}`);
-  }
-});
-console.log('');
 app.use('/api/auth', authRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/contact', contactRoutes);
-app.use('/api/payments', paymentRoutes);
-
-// ======================
-// DEBUG: Log all registered routes
-// ======================
-console.log('\n📋 REGISTERED ROUTES:');
-app._router.stack.forEach((middleware) => {
-  if (middleware.route) {
-    const methods = Object.keys(middleware.route.methods).join(',').toUpperCase();
-    console.log(`  ${methods} ${middleware.route.path}`);
-  } else if (middleware.name === 'router' && middleware.handle?.stack) {
-    const basePath = middleware.regexp?.toString().includes('auth') ? '/api/auth' : '';
-    middleware.handle.stack.forEach((handler) => {
-      if (handler.route) {
-        const methods = Object.keys(handler.route.methods).join(',').toUpperCase();
-        console.log(`  ${methods} ${basePath}${handler.route.path}`);
-      }
-    });
-  }
-});
-console.log('');
+app.use('/api/contact', contactRoutes);    // ✅ Use the imported contactRoutes
+app.use('/api/payments', paymentRoutes);   // ✅ External paymentRoutes
 
 // ======================
 // Health check
@@ -139,6 +99,7 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Use Render's PORT
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
