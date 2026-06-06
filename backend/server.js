@@ -66,7 +66,7 @@ app.get('/test', (req, res) => {
 // ======================
 console.log('\n🔍 Loading routes...\n');
 
-const authRoutes = require('./routes/auth');
+
 console.log('✅ authRoutes loaded from:', require.resolve('./routes/auth'));
 
 app.use('/api/auth', authRoutes);
