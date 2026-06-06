@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle, FaArrowLeft } from 'react-icons/fa';
+import axios from 'axios';
 
 // ============================================
 // FormField Component - DEFINED OUTSIDE Login
@@ -89,8 +90,10 @@ const Login = () => {
   const cardRef = useRef(null);
 
   const [isLogin, setIsLogin] = useState(true);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
 
   const [formData, setFormData] = useState({
@@ -114,24 +117,20 @@ const Login = () => {
     const errors = {};
 
     if (!isLogin) {
-      // Name validation
       if (!formData.name.trim()) {
         errors.name = 'Full name is required';
       } else if (formData.name.trim().length < 2) {
         errors.name = 'Name must be at least 2 characters';
       }
 
-      // Phone validation (optional but must be valid if provided)
       if (formData.phone && !/^\+?[\d\s-]{8,}$/.test(formData.phone)) {
         errors.phone = 'Please enter a valid phone number';
       }
 
-      // Company name validation for corporate users
       if (formData.role === 'corporate' && !formData.companyName.trim()) {
         errors.companyName = 'Company name is required for corporate accounts';
       }
 
-      // Confirm password validation
       if (!formData.confirmPassword) {
         errors.confirmPassword = 'Please confirm your password';
       } else if (formData.password !== formData.confirmPassword) {
@@ -139,14 +138,12 @@ const Login = () => {
       }
     }
 
-    // Email validation (applies to both login and signup)
     if (!formData.email) {
       errors.email = 'Email address is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       errors.email = 'Please enter a valid email address';
     }
 
-    // Password validation (applies to both login and signup)
     if (!formData.password) {
       errors.password = 'Password is required';
     } else if (!isLogin && formData.password.length < 6) {
@@ -161,21 +158,17 @@ const Login = () => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Clear field-specific error when user starts typing
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({ ...prev, [name]: '' }));
     }
 
-    // Clear general error when user makes any change
-    if (error) {
-      setError('');
-    }
+    if (error) setError('');
+    if (success) setSuccess('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate form before submission
     if (!validateForm()) {
       return;
     }
@@ -188,7 +181,6 @@ const Login = () => {
       if (isLogin) {
         userData = await login(formData.email, formData.password);
       } else {
-        // Remove confirmPassword before sending to API
         const { confirmPassword, ...registrationData } = formData;
         userData = await register(registrationData);
       }
@@ -198,7 +190,6 @@ const Login = () => {
     } catch (err) {
       console.error('Auth error:', err);
 
-      // Handle different types of errors
       let errorMessage;
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -214,11 +205,52 @@ const Login = () => {
     }
   };
 
+  // Handle forgot password submission
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+
+    if (!formData.email) {
+      setFieldErrors({ email: 'Email address is required' });
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      setFieldErrors({ email: 'Please enter a valid email address' });
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    setSuccess('');
+
+    try {
+      const response = await axios.post('/api/auth/forgot-password', {
+        email: formData.email
+      });
+
+      setSuccess(response.data.message);
+      setFieldErrors({});
+    } catch (err) {
+      let errorMessage;
+      if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err.message) {
+        errorMessage = err.message;
+      } else {
+        errorMessage = 'An unexpected error occurred. Please try again.';
+      }
+      setError(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const switchMode = () => {
     setIsLogin(prev => !prev);
+    setShowForgotPassword(false);
     setError('');
+    setSuccess('');
     setFieldErrors({});
-    // Reset form data when switching modes
     setFormData({
       name: '',
       email: '',
@@ -229,10 +261,28 @@ const Login = () => {
       companyName: ''
     });
 
-    // Scroll to top of the card smoothly
     if (cardRef.current) {
       cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
+  };
+
+  const goToForgotPassword = () => {
+    setShowForgotPassword(true);
+    setError('');
+    setSuccess('');
+    setFieldErrors({});
+    setFormData(prev => ({
+      ...prev,
+      password: '',
+      confirmPassword: ''
+    }));
+  };
+
+  const goBackToLogin = () => {
+    setShowForgotPassword(false);
+    setError('');
+    setSuccess('');
+    setFieldErrors({});
   };
 
   return (
@@ -265,16 +315,22 @@ const Login = () => {
             color: '#2d3436',
             marginBottom: '0.5rem'
           }}>
-            {isLogin ? 'Welcome Back' : 'Get Started'}
+            {showForgotPassword 
+              ? 'Reset Password' 
+              : isLogin 
+                ? 'Welcome Back' 
+                : 'Get Started'}
           </h2>
           <p style={{ 
             color: '#636e72', 
             fontSize: '0.95rem',
             lineHeight: '1.5'
           }}>
-            {isLogin 
-              ? 'Sign in to your account to continue' 
-              : 'Create your Amanah Charity Foundation account'}
+            {showForgotPassword
+              ? 'Enter your email to receive a password reset link'
+              : isLogin 
+                ? 'Sign in to your account to continue' 
+                : 'Create your Amanah Charity Foundation account'}
           </p>
         </div>
 
@@ -298,230 +354,361 @@ const Login = () => {
           </div>
         )}
 
-        {/* Info banner for signup */}
-        {!isLogin && (
+        {/* Success Alert */}
+        {success && (
           <div style={{
             background: '#e8f5e9',
             border: '1px solid #c8e6c9',
             color: '#1a5f2a',
-            padding: '0.75rem 1rem',
-            borderRadius: '10px',
+            padding: '1rem 1.25rem',
+            borderRadius: '12px',
             marginBottom: '1.5rem',
-            fontSize: '0.85rem',
+            fontSize: '0.9rem',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px'
+            gap: '10px',
+            animation: 'slideUp 0.5s ease-out'
           }}>
-            <FaCheckCircle size={16} />
-            <span>All fields marked with <span style={{ color: '#e74c3c' }}>*</span> are required</span>
+            <FaCheckCircle size={18} style={{ flexShrink: 0 }} />
+            <span style={{ fontWeight: '500' }}>{success}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} noValidate>
-          {/* Signup Fields */}
-          {!isLogin && (
-            <>
-              <FormField 
-                label="Full Name" 
-                name="name" 
-                placeholder="John Doe" 
-                icon={FaUser}
-                required={!isLogin}
-                value={formData.name}
-                onChange={handleChange}
-                error={fieldErrors.name}
-              />
-
-              <FormField 
-                label="Phone Number" 
-                name="phone" 
-                type="tel"
-                placeholder="+234 800 000 0000" 
-                icon={FaPhone}
-                value={formData.phone}
-                onChange={handleChange}
-                error={fieldErrors.phone}
-              />
-
-              <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                <label style={{ 
-                  display: 'block', 
-                  marginBottom: '0.5rem', 
-                  fontWeight: '500', 
-                  color: '#2d3436',
-                  fontSize: '0.9rem'
-                }}>
-                  I am a<span style={{ color: '#e74c3c', marginLeft: '4px' }}>*</span>
-                </label>
-                <select 
-                  name="role" 
-                  value={formData.role} 
-                  onChange={handleChange}
-                  style={{ 
-                    width: '100%',
-                    padding: '0.85rem 1rem',
-                    border: '2px solid #dfe6e9',
-                    borderRadius: '10px',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    backgroundColor: '#fff',
-                    cursor: 'pointer',
-                    transition: 'border-color 0.2s ease'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#4CAF50'}
-                  onBlur={(e) => e.target.style.borderColor = '#dfe6e9'}
-                >
-                  <option value="donor">Individual Donor</option>
-                  <option value="corporate">Corporate Organization</option>
-                  <option value="beneficiary">Beneficiary</option>
-                  <option value="vendor">Vendor</option>
-                </select>
-              </div>
-
-              {formData.role === 'corporate' && (
-                <FormField 
-                  label="Company Name" 
-                  name="companyName" 
-                  placeholder="Company Ltd" 
-                  icon={FaBuilding}
-                  required={formData.role === 'corporate'}
-                  value={formData.companyName}
-                  onChange={handleChange}
-                  error={fieldErrors.companyName}
-                />
-              )}
-            </>
-          )}
-
-          {/* Common Fields */}
-          <FormField 
-            label="Email Address" 
-            name="email" 
-            type="email"
-            placeholder="you@example.com" 
-            icon={FaEnvelope}
-            required
-            value={formData.email}
-            onChange={handleChange}
-            error={fieldErrors.email}
-          />
-
-          <FormField 
-            label="Password" 
-            name="password" 
-            type="password"
-            placeholder={isLogin ? "Enter your password" : "Min 6 characters"} 
-            icon={FaLock}
-            required
-            minLength={!isLogin ? "6" : undefined}
-            value={formData.password}
-            onChange={handleChange}
-            error={fieldErrors.password}
-          />
-
-          {/* Confirm Password - Only for Signup */}
-          {!isLogin && (
+        {/* Forgot Password Form */}
+        {showForgotPassword ? (
+          <form onSubmit={handleForgotPassword} noValidate>
             <FormField 
-              label="Confirm Password" 
-              name="confirmPassword" 
-              type="password"
-              placeholder="Re-enter your password" 
-              icon={FaLock}
-              required={!isLogin}
-              value={formData.confirmPassword}
+              label="Email Address" 
+              name="email" 
+              type="email"
+              placeholder="you@example.com" 
+              icon={FaEnvelope}
+              required
+              value={formData.email}
               onChange={handleChange}
-              error={fieldErrors.confirmPassword}
+              error={fieldErrors.email}
             />
-          )}
 
-          {/* Submit Button */}
-          <button 
-            type="submit" 
-            disabled={loading}
-            style={{ 
-              width: '100%',
-              padding: '1rem',
-              background: loading ? '#4CAF50' : '#1a5f2a',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '12px',
-              fontSize: '1rem',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'all 0.3s ease',
-              marginTop: '0.5rem',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.background = '#2d8a3e';
-                e.target.style.transform = 'translateY(-2px)';
-                e.target.style.boxShadow = '0 6px 20px rgba(26, 95, 42, 0.5)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.background = '#1a5f2a';
-                e.target.style.transform = 'translateY(0)';
-                e.target.style.boxShadow = '0 4px 15px rgba(26, 95, 42, 0.4)';
-              }
-            }}
-          >
-            {loading ? (
+            <button 
+              type="submit" 
+              disabled={loading}
+              style={{ 
+                width: '100%',
+                padding: '1rem',
+                background: loading ? '#4CAF50' : '#1a5f2a',
+                color: '#fff',
+                border: 'none',
+                borderRadius: '12px',
+                fontSize: '1rem',
+                fontWeight: '600',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                marginTop: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
+              }}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.background = '#2d8a3e';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(26, 95, 42, 0.5)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.target.style.background = '#1a5f2a';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(26, 95, 42, 0.4)';
+                }
+              }}
+            >
+              {loading ? (
+                <>
+                  <span style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid #fff',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                    display: 'inline-block'
+                  }} />
+                  <span>Please wait...</span>
+                </>
+              ) : (
+                <span>Send Reset Link</span>
+              )}
+            </button>
+
+            <div style={{ 
+              textAlign: 'center', 
+              marginTop: '1.5rem'
+            }}>
+              <button 
+                type="button"
+                onClick={goBackToLogin}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#1a5f2a',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  fontSize: '0.9rem',
+                  padding: '0',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '3px'
+                }}
+                onMouseEnter={(e) => e.target.style.color = '#2d8a3e'}
+                onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}
+              >
+                <FaArrowLeft size={14} />
+                Back to Sign In
+              </button>
+            </div>
+          </form>
+        ) : (
+          /* Login / Signup Form */
+          <form onSubmit={handleSubmit} noValidate>
+            {/* Signup Fields */}
+            {!isLogin && (
               <>
-                <span style={{
-                  width: '18px',
-                  height: '18px',
-                  border: '2px solid #fff',
-                  borderTopColor: 'transparent',
-                  borderRadius: '50%',
-                  animation: 'spin 0.8s linear infinite',
-                  display: 'inline-block'
-                }} />
-                <span>Please wait...</span>
-              </>
-            ) : (
-              <>
-                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                <FormField 
+                  label="Full Name" 
+                  name="name" 
+                  placeholder="John Doe" 
+                  icon={FaUser}
+                  required={!isLogin}
+                  value={formData.name}
+                  onChange={handleChange}
+                  error={fieldErrors.name}
+                />
+
+                <FormField 
+                  label="Phone Number" 
+                  name="phone" 
+                  type="tel"
+                  placeholder="+234 800 000 0000" 
+                  icon={FaPhone}
+                  value={formData.phone}
+                  onChange={handleChange}
+                  error={fieldErrors.phone}
+                />
+
+                <div className="form-group" style={{ marginBottom: '1.25rem' }}>
+                  <label style={{ 
+                    display: 'block', 
+                    marginBottom: '0.5rem', 
+                    fontWeight: '500', 
+                    color: '#2d3436',
+                    fontSize: '0.9rem'
+                  }}>
+                    I am a<span style={{ color: '#e74c3c', marginLeft: '4px' }}>*</span>
+                  </label>
+                  <select 
+                    name="role" 
+                    value={formData.role} 
+                    onChange={handleChange}
+                    style={{ 
+                      width: '100%',
+                      padding: '0.85rem 1rem',
+                      border: '2px solid #dfe6e9',
+                      borderRadius: '10px',
+                      fontSize: '0.95rem',
+                      outline: 'none',
+                      backgroundColor: '#fff',
+                      cursor: 'pointer',
+                      transition: 'border-color 0.2s ease'
+                    }}
+                    onFocus={(e) => e.target.style.borderColor = '#4CAF50'}
+                    onBlur={(e) => e.target.style.borderColor = '#dfe6e9'}
+                  >
+                    <option value="donor">Individual Donor</option>
+                    <option value="corporate">Corporate Organization</option>
+                    <option value="beneficiary">Beneficiary</option>
+                    <option value="vendor">Vendor</option>
+                  </select>
+                </div>
+
+                {formData.role === 'corporate' && (
+                  <FormField 
+                    label="Company Name" 
+                    name="companyName" 
+                    placeholder="Company Ltd" 
+                    icon={FaBuilding}
+                    required={formData.role === 'corporate'}
+                    value={formData.companyName}
+                    onChange={handleChange}
+                    error={fieldErrors.companyName}
+                  />
+                )}
               </>
             )}
-          </button>
-        </form>
 
-        {/* Switch Mode */}
-        <div style={{ 
-          textAlign: 'center', 
-          marginTop: '1.5rem',
-          paddingTop: '1.5rem',
-          borderTop: '1px solid #dfe6e9'
-        }}>
-          <p style={{ color: '#636e72', fontSize: '0.9rem' }}>
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+            {/* Common Fields */}
+            <FormField 
+              label="Email Address" 
+              name="email" 
+              type="email"
+              placeholder="you@example.com" 
+              icon={FaEnvelope}
+              required
+              value={formData.email}
+              onChange={handleChange}
+              error={fieldErrors.email}
+            />
+
+            <FormField 
+              label="Password" 
+              name="password" 
+              type="password"
+              placeholder={isLogin ? "Enter your password" : "Min 6 characters"} 
+              icon={FaLock}
+              required
+              minLength={!isLogin ? "6" : undefined}
+              value={formData.password}
+              onChange={handleChange}
+              error={fieldErrors.password}
+            />
+
+            {/* Confirm Password - Only for Signup */}
+            {!isLogin && (
+              <FormField 
+                label="Confirm Password" 
+                name="confirmPassword" 
+                type="password"
+                placeholder="Re-enter your password" 
+                icon={FaLock}
+                required={!isLogin}
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                error={fieldErrors.confirmPassword}
+              />
+            )}
+
+            {/* Forgot Password Link - Only for Login */}
+            {isLogin && (
+              <div style={{ 
+                textAlign: 'right', 
+                marginBottom: '1rem',
+                marginTop: '-0.5rem'
+              }}>
+                <button 
+                  type="button"
+                  onClick={goToForgotPassword}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#1a5f2a',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    fontSize: '0.85rem',
+                    padding: '0',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '2px'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#2d8a3e'}
+                  onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}
+                >
+                  Forgot password?
+                </button>
+              </div>
+            )}
+
+            {/* Submit Button */}
             <button 
-              type="button"
-              onClick={switchMode}
-              style={{
-                background: 'none',
+              type="submit" 
+              disabled={loading}
+              style={{ 
+                width: '100%',
+                padding: '1rem',
+                background: loading ? '#4CAF50' : '#1a5f2a',
+                color: '#fff',
                 border: 'none',
-                color: '#1a5f2a',
+                borderRadius: '12px',
+                fontSize: '1rem',
                 fontWeight: '600',
-                cursor: 'pointer',
-                fontSize: '0.9rem',
-                padding: '0',
-                textDecoration: 'underline',
-                textUnderlineOffset: '3px'
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                marginTop: '0.5rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
               }}
-              onMouseEnter={(e) => e.target.style.color = '#2d8a3e'}
-              onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}
+              onMouseEnter={(e) => {
+                if (!loading) {
+                  e.target.style.background = '#2d8a3e';
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 6px 20px rgba(26, 95, 42, 0.5)';
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!loading) {
+                  e.target.style.background = '#1a5f2a';
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 4px 15px rgba(26, 95, 42, 0.4)';
+                }
+              }}
             >
-              {isLogin ? 'Sign Up' : 'Sign In'}
+              {loading ? (
+                <>
+                  <span style={{
+                    width: '18px',
+                    height: '18px',
+                    border: '2px solid #fff',
+                    borderTopColor: 'transparent',
+                    borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite',
+                    display: 'inline-block'
+                  }} />
+                  <span>Please wait...</span>
+                </>
+              ) : (
+                <>
+                  <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+                </>
+              )}
             </button>
-          </p>
-        </div>
+
+            {/* Switch Mode */}
+            <div style={{ 
+              textAlign: 'center', 
+              marginTop: '1.5rem',
+              paddingTop: '1.5rem',
+              borderTop: '1px solid #dfe6e9'
+            }}>
+              <p style={{ color: '#636e72', fontSize: '0.9rem' }}>
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
+                <button 
+                  type="button"
+                  onClick={switchMode}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: '#1a5f2a',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    padding: '0',
+                    textDecoration: 'underline',
+                    textUnderlineOffset: '3px'
+                  }}
+                  onMouseEnter={(e) => e.target.style.color = '#2d8a3e'}
+                  onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}
+                >
+                  {isLogin ? 'Sign Up' : 'Sign In'}
+                </button>
+              </p>
+            </div>
+          </form>
+        )}
       </div>
 
       {/* CSS Animations */}

@@ -20,7 +20,7 @@ import PaymentVerify from './pages/PaymentVerify';
 import Press from './pages/Press';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
-
+import ResetPassword from './pages/ResetPassword';
 import Partnerships from './pages/Partnerships'; // ← NEW
 import FAQ from './pages/FAQ'; 
 import HowItWorksPage from './pages/HowItWorksPage';
