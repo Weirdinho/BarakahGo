@@ -523,7 +523,7 @@ const GuestDonate = () => {
 
           <div className="guest-footer">
             Want to track your donations?{' '}
-            <Link to="/login">Log in</Link> or <Link to="/register">Create account</Link>
+            <Link to="/login">Log in</Link> or <Link to="/login">Create account</Link>
           </div>
         </div>
       </div>
