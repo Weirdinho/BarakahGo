@@ -61,6 +61,27 @@ app.get('/test', (req, res) => {
 // ======================
 // API Routes
 // ======================
+// ======================
+// API Routes
+// ======================
+console.log('\n🔍 Loading routes...\n');
+
+const authRoutes = require('./routes/auth');
+console.log('✅ authRoutes loaded from:', require.resolve('./routes/auth'));
+
+app.use('/api/auth', authRoutes);
+
+// DEBUG: Print all auth routes
+console.log('\n📋 AUTH ROUTES REGISTERED:');
+authRoutes.stack.forEach((layer) => {
+  if (layer.route) {
+    const methods = Object.keys(layer.route.methods)
+      .map(m => m.toUpperCase())
+      .join(',');
+    console.log(`   ${methods} /api/auth${layer.route.path}`);
+  }
+});
+console.log('');
 app.use('/api/auth', authRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/vouchers', voucherRoutes);
