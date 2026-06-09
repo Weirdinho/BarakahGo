@@ -170,7 +170,7 @@ const About = () => {
   <div className="team-member">
     <img className="team-avatar" src={SS} alt="Dr Sulaiman D. Sani" />
     <h4>Dr Sulaiman D. Sani</h4>
-    <p>BOT member</p>
+    <p>Shari'a Advisor</p>
   </div>
 
   <div className="team-member">

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle, FaArrowLeft, FaKey } from 'react-icons/fa';
-import axios from 'axios';
+import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle, FaArrowLeft } from 'react-icons/fa';
+import api from '../services/api';
 
 // ============================================
 // FormField Component
@@ -156,7 +156,7 @@ const Login = () => {
     }
   };
 
-  // Send password to email
+  // Request password reset link
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     if (!formData.email) {
@@ -171,7 +171,7 @@ const Login = () => {
     setError('');
     setSuccess('');
     try {
-      const response = await axios.post('/api/auth/forgot-password', { email: formData.email });
+      const response = await api.post('/auth/forgot-password', { email: formData.email });
       setSuccess(response.data.message);
       setFieldErrors({});
     } catch (err) {
@@ -227,24 +227,12 @@ const Login = () => {
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '60px',
-            height: '60px',
-            background: 'linear-gradient(135deg, #1a5f2a, #2d8a3e)',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 1rem'
-          }}>
-            {showForgotPassword ? <FaKey size={28} color="#fff" /> : <FaLock size={28} color="#fff" />}
-          </div>
           <h2 style={{ fontSize: '1.8rem', fontWeight: '700', color: '#2d3436', marginBottom: '0.5rem' }}>
-            {showForgotPassword ? 'Forgot Password?' : isLogin ? 'Welcome Back' : 'Get Started'}
+            {showForgotPassword ? 'Reset Password' : isLogin ? 'Welcome Back' : 'Get Started'}
           </h2>
           <p style={{ color: '#636e72', fontSize: '0.95rem', lineHeight: '1.5' }}>
             {showForgotPassword
-              ? "Enter your email and we'll send your password to you"
+              ? 'Enter your email to receive a password reset link'
               : isLogin ? 'Sign in to your account to continue' : 'Create your Amanah Charity Foundation account'}
           </p>
         </div>
@@ -326,10 +314,7 @@ const Login = () => {
                   <span>Please wait...</span>
                 </>
               ) : (
-                <>
-                  <FaEnvelope size={16} />
-                  <span>Send My Password</span>
-                </>
+                <span>Send Reset Link</span>
               )}
             </button>
 

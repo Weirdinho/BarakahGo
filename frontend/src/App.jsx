@@ -107,7 +107,7 @@ const AppContent = () => {
         <Route path="/donateGateway" element={<DonateGateway />} />
         <Route path="/donateGateway/guest" element={<GuestDonate />} />
         <Route path="/donate/verify" element={<PaymentVerify />} />
-
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/partnerships" element={<Partnerships />} /> {/* ← NEW */}
         <Route path="/faq" element={<FAQ />} /> {/* ← NEW */}
          <Route path="/how-it-works" element={<HowItWorksPage />} />
