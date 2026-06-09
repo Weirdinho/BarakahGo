@@ -444,6 +444,11 @@ const AdminDashboard = () => {
   return (
     <>
       <style>{`
+        * {
+          -webkit-tap-highlight-color: transparent;
+          box-sizing: border-box;
+        }
+
         .admin-dashboard {
           display: flex;
           min-height: 100vh;
@@ -455,11 +460,20 @@ const AdminDashboard = () => {
           background: #1a5f2a;
           color: white;
           padding: 1rem;
-          transition: all 0.3s ease;
+          position: fixed;
+          top: 0;
+          left: 0;
+          height: 100vh;
+          overflow-y: auto;
+          z-index: 1000;
+          transition: transform 0.3s ease;
         }
 
-        .admin-brand {
-          margin-bottom: 2rem;
+       
+
+        .admin-brand h2 {
+          font-size: 1.25rem;
+          font-weight: 700;
         }
 
         .admin-nav {
@@ -478,6 +492,14 @@ const AdminDashboard = () => {
           display: flex;
           gap: 10px;
           border-radius: 6px;
+          font-size: 0.9rem;
+          align-items: center;
+          transition: background 0.2s ease;
+          min-height: 44px;
+        }
+
+        .admin-nav-item:active {
+          background: rgba(255,255,255,0.15);
         }
 
         .admin-nav-item.active {
@@ -487,13 +509,24 @@ const AdminDashboard = () => {
         .admin-main {
           flex: 1;
           padding: 1.5rem;
+          margin-left: 260px;
+          min-width: 0;
         }
 
         .admin-header {
-        margin-top: 70px;
+          margin-top: 70px;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          margin-bottom: 1.5rem;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+
+        .admin-header h2 {
+          font-size: 1.5rem;
+          font-weight: 700;
+          color: #1e293b;
         }
 
         .menu-toggle {
@@ -504,76 +537,76 @@ const AdminDashboard = () => {
           background: #1a5f2a;
           color: white;
           border: none;
-          padding: 10px;
-          border-radius: 6px;
+          width: 44px;
+          height: 44px;
+          border-radius: 10px;
           z-index: 2000;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.2rem;
+          cursor: pointer;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
 
-        @media (max-width: 768px) {
-          .menu-toggle {
-            display: block;
-          }
-
-          .admin-sidebar {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 100%;
-            transform: translateX(-100%);
-            z-index: 1500;
-          }
-
-          .admin-sidebar.open {
-            transform: translateX(0);
-          }
-
-          .admin-main {
-            margin-left: 0;
-          }
+        .sidebar-overlay {
+          display: none;
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0,0,0,0.5);
+          z-index: 999;
+          opacity: 0;
+          transition: opacity 0.3s ease;
         }
 
         .admin-stats-grid {
           display: grid;
           grid-template-columns: repeat(4, 1fr);
-          gap: 1.5rem;
+          gap: 1rem;
         }
 
         .admin-stat-card {
           background: white;
           border-radius: 12px;
-          padding: 1.5rem;
+          padding: 1.25rem;
           display: flex;
           align-items: center;
-          gap: 1rem;
+          gap: 0.875rem;
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          min-width: 0;
         }
 
         .admin-stat-icon {
-          width: 50px;
-          height: 50px;
+          width: 48px;
+          height: 48px;
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
           font-size: 1.25rem;
+          flex-shrink: 0;
         }
 
         .admin-stat-card h3 {
-          font-size: 1.5rem;
+          font-size: 1.35rem;
           font-weight: 800;
           color: #1e293b;
+          line-height: 1.2;
         }
 
         .admin-stat-card p {
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           color: #64748b;
+          margin-top: 2px;
         }
 
         /* FILTER BAR STYLES */
         .filter-bar {
           background: white;
           border-radius: 12px;
-          padding: 1rem 1.5rem;
+          padding: 1rem;
           margin-bottom: 1rem;
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
           display: flex;
@@ -588,11 +621,14 @@ const AdminDashboard = () => {
           align-items: center;
           gap: 0.75rem;
           flex-wrap: wrap;
+          flex: 1;
+          min-width: 0;
         }
 
         .filter-icon {
           color: #1a5f2a;
           font-size: 1rem;
+          flex-shrink: 0;
         }
 
         .filter-buttons {
@@ -605,15 +641,17 @@ const AdminDashboard = () => {
           background: #f1f5f9;
           border: 2px solid transparent;
           color: #64748b;
-          padding: 0.5rem 1rem;
+          padding: 0.5rem 0.875rem;
           border-radius: 50px;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           font-weight: 500;
           cursor: pointer;
           transition: all 0.3s ease;
           display: flex;
           align-items: center;
           gap: 0.4rem;
+          min-height: 36px;
+          white-space: nowrap;
         }
 
         .filter-btn:hover {
@@ -652,6 +690,7 @@ const AdminDashboard = () => {
           border-radius: 8px;
           font-size: 0.9rem;
           transition: all 0.3s ease;
+          min-height: 40px;
         }
 
         .search-input:focus {
@@ -669,31 +708,34 @@ const AdminDashboard = () => {
         .admin-table-container {
           background: white;
           border-radius: 12px;
-          overflow: hidden;
+          overflow-x: auto;
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          -webkit-overflow-scrolling: touch;
         }
 
         .admin-table {
           width: 100%;
           border-collapse: collapse;
+          min-width: 600px;
         }
 
         .admin-table th {
           background: #f8fafc;
-          padding: 1rem;
+          padding: 0.875rem 1rem;
           text-align: left;
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
           color: #64748b;
           font-weight: 600;
           border-bottom: 1px solid #e2e8f0;
+          white-space: nowrap;
         }
 
         .admin-table td {
-          padding: 1rem;
+          padding: 0.875rem 1rem;
           border-bottom: 1px solid #f1f5f9;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           color: #334155;
         }
 
@@ -702,11 +744,13 @@ const AdminDashboard = () => {
         }
 
         .status-badge {
-          padding: 0.25rem 0.75rem;
+          padding: 0.25rem 0.625rem;
           border-radius: 50px;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 600;
           text-transform: uppercase;
+          white-space: nowrap;
+          display: inline-block;
         }
 
         .status-badge.success,
@@ -735,11 +779,13 @@ const AdminDashboard = () => {
         }
 
         .role-select {
-          padding: 0.5rem;
+          padding: 0.4rem 0.6rem;
           border: 1px solid #e2e8f0;
           border-radius: 6px;
-          font-size: 0.85rem;
+          font-size: 0.8rem;
           background: white;
+          min-height: 36px;
+          min-width: 120px;
         }
 
         .action-btn {
@@ -752,6 +798,9 @@ const AdminDashboard = () => {
           display: inline-flex;
           align-items: center;
           gap: 0.25rem;
+          min-height: 36px;
+          min-width: 36px;
+          justify-content: center;
         }
 
         .action-btn.delete {
@@ -769,24 +818,133 @@ const AdminDashboard = () => {
           color: #dc2626;
         }
 
+        /* ========== TABLET (iPad) ========== */
         @media (max-width: 1024px) {
           .admin-stats-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
 
+        /* ========== MOBILE (iPhone 16 & smaller) ========== */
         @media (max-width: 768px) {
+          
+          .menu-toggle {
+            display: flex;
+          }
+
+          .admin-sidebar {
+            transform: translateX(-100%);
+            width: 50%;
+          }
+
+          .admin-sidebar.open {
+            transform: translateX(0);
+          }
+
+          .sidebar-overlay.open {
+            display: block;
+            opacity: 1;
+          }
+
+          .admin-main {
+            margin-left: 0;
+            padding: 1rem;
+            padding-top: 70px;
+          }
+
+          .admin-header {
+            margin-top: 0;
+          }
+
+          .admin-header h2 {
+            font-size: 1.25rem;
+          }
+
           .admin-stats-grid {
             grid-template-columns: 1fr;
+            gap: 0.75rem;
           }
-          
+
+          .admin-stat-card {
+            padding: 1rem;
+          }
+
+          .admin-stat-icon {
+            width: 44px;
+            height: 44px;
+            font-size: 1.1rem;
+          }
+
+          .admin-stat-card h3 {
+            font-size: 1.2rem;
+          }
+
           .filter-bar {
             flex-direction: column;
             align-items: stretch;
+            padding: 0.875rem;
           }
-          
+
+          .filter-group {
+            width: 100%;
+          }
+
+          .filter-buttons {
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            -webkit-overflow-scrolling: touch;
+            padding-bottom: 4px;
+          }
+
           .search-group {
             max-width: 100%;
+            min-width: 100%;
+          }
+
+          .admin-table {
+            min-width: 500px;
+          }
+
+          .admin-table th,
+          .admin-table td {
+            padding: 0.75rem 0.625rem;
+            font-size: 0.8rem;
+          }
+
+          .action-btn {
+            min-height: 32px;
+            min-width: 32px;
+            padding: 0.4rem;
+          }
+        }
+
+        /* ========== SMALL PHONES (iPhone SE, mini) ========== */
+        @media (max-width: 375px) {
+          .admin-main {
+            padding: 0.75rem;
+            padding-top: 65px;
+          }
+
+          .admin-stat-card h3 {
+            font-size: 1.1rem;
+          }
+
+          .filter-btn {
+            padding: 0.4rem 0.7rem;
+            font-size: 0.75rem;
+          }
+
+          .admin-table th,
+          .admin-table td {
+            padding: 0.625rem 0.5rem;
+            font-size: 0.75rem;
+          }
+        }
+
+        /* Safe area for notched iPhones */
+        @supports (padding-top: env(safe-area-inset-top)) {
+          .menu-toggle {
+            top: max(15px, env(safe-area-inset-top));
           }
         }
       `}</style>
@@ -794,15 +952,20 @@ const AdminDashboard = () => {
       <button
         className="menu-toggle"
         onClick={() => setSidebarOpen(!sidebarOpen)}
+        aria-label="Toggle menu"
       >
         {sidebarOpen ? <FaClose /> : <FaBars />}
       </button>
 
+      <div 
+        className={`sidebar-overlay ${sidebarOpen ? 'open' : ''}`}
+        onClick={closeSidebar}
+      />
+
       <div className="admin-dashboard">
         <aside className={`admin-sidebar ${sidebarOpen ? 'open' : ''}`}>
           <div className="admin-brand">
-
-            <p>Admin Panel</p>
+            <h2>Admin Panel</h2>
           </div>
 
           <nav className="admin-nav">
@@ -820,14 +983,12 @@ const AdminDashboard = () => {
               </button>
             ))}
           </nav>
-
-        
         </aside>
 
         <main className="admin-main">
           <header className="admin-header">
             <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>
-            <div>
+            <div style={{ fontSize: '0.85rem', color: '#64748b' }}>
               {user?.name} ({user?.role})
             </div>
           </header>
