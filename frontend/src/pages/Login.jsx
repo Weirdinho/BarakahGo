@@ -1,15 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle, FaArrowLeft } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle, FaArrowLeft, FaKey } from 'react-icons/fa';
 import axios from 'axios';
 
 // ============================================
-// FormField Component - DEFINED OUTSIDE Login
+// FormField Component
 // ============================================
 const FormField = ({ label, name, type = 'text', placeholder, icon: Icon, required = false, value, onChange, error, children, ...props }) => {
   const [isFocused, setIsFocused] = useState(false);
-
   const hasError = !!error;
 
   const inputStyles = {
@@ -106,50 +105,24 @@ const Login = () => {
     companyName: ''
   });
 
-  // Redirect if already logged in
   useEffect(() => {
-    if (user) {
-      navigate('/portal');
-    }
+    if (user) navigate('/portal');
   }, [user, navigate]);
 
   const validateForm = () => {
     const errors = {};
-
     if (!isLogin) {
-      if (!formData.name.trim()) {
-        errors.name = 'Full name is required';
-      } else if (formData.name.trim().length < 2) {
-        errors.name = 'Name must be at least 2 characters';
-      }
-
-      if (formData.phone && !/^\+?[\d\s-]{8,}$/.test(formData.phone)) {
-        errors.phone = 'Please enter a valid phone number';
-      }
-
-      if (formData.role === 'corporate' && !formData.companyName.trim()) {
-        errors.companyName = 'Company name is required for corporate accounts';
-      }
-
-      if (!formData.confirmPassword) {
-        errors.confirmPassword = 'Please confirm your password';
-      } else if (formData.password !== formData.confirmPassword) {
-        errors.confirmPassword = 'Passwords do not match';
-      }
+      if (!formData.name.trim()) errors.name = 'Full name is required';
+      else if (formData.name.trim().length < 2) errors.name = 'Name must be at least 2 characters';
+      if (formData.phone && !/^\+?[\d\s-]{8,}$/.test(formData.phone)) errors.phone = 'Please enter a valid phone number';
+      if (formData.role === 'corporate' && !formData.companyName.trim()) errors.companyName = 'Company name is required';
+      if (!formData.confirmPassword) errors.confirmPassword = 'Please confirm your password';
+      else if (formData.password !== formData.confirmPassword) errors.confirmPassword = 'Passwords do not match';
     }
-
-    if (!formData.email) {
-      errors.email = 'Email address is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.email = 'Please enter a valid email address';
-    }
-
-    if (!formData.password) {
-      errors.password = 'Password is required';
-    } else if (!isLogin && formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters';
-    }
-
+    if (!formData.email) errors.email = 'Email address is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) errors.email = 'Please enter a valid email address';
+    if (!formData.password) errors.password = 'Password is required';
+    else if (!isLogin && formData.password.length < 6) errors.password = 'Password must be at least 6 characters';
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -157,88 +130,52 @@ const Login = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-
-    if (fieldErrors[name]) {
-      setFieldErrors(prev => ({ ...prev, [name]: '' }));
-    }
-
+    if (fieldErrors[name]) setFieldErrors(prev => ({ ...prev, [name]: '' }));
     if (error) setError('');
     if (success) setSuccess('');
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
-
+    if (!validateForm()) return;
     setLoading(true);
     setError('');
-
     try {
       let userData;
-      if (isLogin) {
-        userData = await login(formData.email, formData.password);
-      } else {
+      if (isLogin) userData = await login(formData.email, formData.password);
+      else {
         const { confirmPassword, ...registrationData } = formData;
         userData = await register(registrationData);
       }
-
-      console.log('Login successful, user role:', userData.role);
       navigate('/portal');
     } catch (err) {
-      console.error('Auth error:', err);
-
-      let errorMessage;
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      } else {
-        errorMessage = 'An unexpected error occurred. Please try again.';
-      }
-
+      let errorMessage = err.response?.data?.message || err.message || 'An unexpected error occurred';
       setError(errorMessage);
     } finally {
       setLoading(false);
     }
   };
 
-  // Handle forgot password submission
+  // Send password to email
   const handleForgotPassword = async (e) => {
     e.preventDefault();
-
     if (!formData.email) {
       setFieldErrors({ email: 'Email address is required' });
       return;
     }
-
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       setFieldErrors({ email: 'Please enter a valid email address' });
       return;
     }
-
     setLoading(true);
     setError('');
     setSuccess('');
-
     try {
-      const response = await axios.post('/api/auth/forgot-password', {
-        email: formData.email
-      });
-
+      const response = await axios.post('/api/auth/forgot-password', { email: formData.email });
       setSuccess(response.data.message);
       setFieldErrors({});
     } catch (err) {
-      let errorMessage;
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      } else {
-        errorMessage = 'An unexpected error occurred. Please try again.';
-      }
+      let errorMessage = err.response?.data?.message || err.message || 'An unexpected error occurred';
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -251,19 +188,8 @@ const Login = () => {
     setError('');
     setSuccess('');
     setFieldErrors({});
-    setFormData({
-      name: '',
-      email: '',
-      password: '',
-      confirmPassword: '',
-      phone: '',
-      role: 'donor',
-      companyName: ''
-    });
-
-    if (cardRef.current) {
-      cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    setFormData({ name: '', email: '', password: '', confirmPassword: '', phone: '', role: 'donor', companyName: '' });
+    if (cardRef.current) cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const goToForgotPassword = () => {
@@ -271,11 +197,7 @@ const Login = () => {
     setError('');
     setSuccess('');
     setFieldErrors({});
-    setFormData(prev => ({
-      ...prev,
-      password: '',
-      confirmPassword: ''
-    }));
+    setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
   };
 
   const goBackToLogin = () => {
@@ -294,59 +216,45 @@ const Login = () => {
       background: 'linear-gradient(135deg, #1a5f2a 0%, #0d3d18 100%)',
       padding: '2rem 1rem'
     }}>
-      <div 
-        ref={cardRef}
-        className="login-card" 
-        style={{
-          background: '#fff',
-          borderRadius: '20px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          padding: '2.5rem',
-          width: '100%',
-          maxWidth: '480px',
-          animation: 'slideUp 0.5s ease-out'
-        }}
-      >
+      <div ref={cardRef} className="login-card" style={{
+        background: '#fff',
+        borderRadius: '20px',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        padding: '2.5rem',
+        width: '100%',
+        maxWidth: '480px',
+        animation: 'slideUp 0.5s ease-out'
+      }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <h2 style={{ 
-            fontSize: '1.8rem', 
-            fontWeight: '700', 
-            color: '#2d3436',
-            marginBottom: '0.5rem'
+          <div style={{
+            width: '60px',
+            height: '60px',
+            background: 'linear-gradient(135deg, #1a5f2a, #2d8a3e)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 1rem'
           }}>
-            {showForgotPassword 
-              ? 'Reset Password' 
-              : isLogin 
-                ? 'Welcome Back' 
-                : 'Get Started'}
+            {showForgotPassword ? <FaKey size={28} color="#fff" /> : <FaLock size={28} color="#fff" />}
+          </div>
+          <h2 style={{ fontSize: '1.8rem', fontWeight: '700', color: '#2d3436', marginBottom: '0.5rem' }}>
+            {showForgotPassword ? 'Forgot Password?' : isLogin ? 'Welcome Back' : 'Get Started'}
           </h2>
-          <p style={{ 
-            color: '#636e72', 
-            fontSize: '0.95rem',
-            lineHeight: '1.5'
-          }}>
+          <p style={{ color: '#636e72', fontSize: '0.95rem', lineHeight: '1.5' }}>
             {showForgotPassword
-              ? 'Enter your email to receive a password reset link'
-              : isLogin 
-                ? 'Sign in to your account to continue' 
-                : 'Create your Amanah Charity Foundation account'}
+              ? "Enter your email and we'll send your password to you"
+              : isLogin ? 'Sign in to your account to continue' : 'Create your Amanah Charity Foundation account'}
           </p>
         </div>
 
-        {/* General Error Alert */}
+        {/* Error Alert */}
         {error && (
           <div style={{
-            background: '#fee2e2',
-            border: '1px solid #fecaca',
-            color: '#dc2626',
-            padding: '1rem 1.25rem',
-            borderRadius: '12px',
-            marginBottom: '1.5rem',
-            fontSize: '0.9rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
+            background: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626',
+            padding: '1rem 1.25rem', borderRadius: '12px', marginBottom: '1.5rem',
+            fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px',
             animation: 'shake 0.5s ease-in-out'
           }}>
             <FaExclamationCircle size={18} style={{ flexShrink: 0 }} />
@@ -357,16 +265,9 @@ const Login = () => {
         {/* Success Alert */}
         {success && (
           <div style={{
-            background: '#e8f5e9',
-            border: '1px solid #c8e6c9',
-            color: '#1a5f2a',
-            padding: '1rem 1.25rem',
-            borderRadius: '12px',
-            marginBottom: '1.5rem',
-            fontSize: '0.9rem',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
+            background: '#e8f5e9', border: '1px solid #c8e6c9', color: '#1a5f2a',
+            padding: '1rem 1.25rem', borderRadius: '12px', marginBottom: '1.5rem',
+            fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '10px',
             animation: 'slideUp 0.5s ease-out'
           }}>
             <FaCheckCircle size={18} style={{ flexShrink: 0 }} />
@@ -393,21 +294,11 @@ const Login = () => {
               type="submit" 
               disabled={loading}
               style={{ 
-                width: '100%',
-                padding: '1rem',
-                background: loading ? '#4CAF50' : '#1a5f2a',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease',
-                marginTop: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
+                width: '100%', padding: '1rem', background: loading ? '#4CAF50' : '#1a5f2a',
+                color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem',
+                fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease', marginTop: '0.5rem', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', gap: '8px',
                 boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
               }}
               onMouseEnter={(e) => {
@@ -428,41 +319,28 @@ const Login = () => {
               {loading ? (
                 <>
                   <span style={{
-                    width: '18px',
-                    height: '18px',
-                    border: '2px solid #fff',
-                    borderTopColor: 'transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite',
-                    display: 'inline-block'
+                    width: '18px', height: '18px', border: '2px solid #fff',
+                    borderTopColor: 'transparent', borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite', display: 'inline-block'
                   }} />
                   <span>Please wait...</span>
                 </>
               ) : (
-                <span>Send Reset Link</span>
+                <>
+                  <FaEnvelope size={16} />
+                  <span>Send My Password</span>
+                </>
               )}
             </button>
 
-            <div style={{ 
-              textAlign: 'center', 
-              marginTop: '1.5rem'
-            }}>
+            <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
               <button 
                 type="button"
                 onClick={goBackToLogin}
                 style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#1a5f2a',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  fontSize: '0.9rem',
-                  padding: '0',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '3px'
+                  background: 'none', border: 'none', color: '#1a5f2a', fontWeight: '600',
+                  cursor: 'pointer', fontSize: '0.9rem', padding: '0', display: 'inline-flex',
+                  alignItems: 'center', gap: '6px', textDecoration: 'underline', textUnderlineOffset: '3px'
                 }}
                 onMouseEnter={(e) => e.target.style.color = '#2d8a3e'}
                 onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}
@@ -475,171 +353,69 @@ const Login = () => {
         ) : (
           /* Login / Signup Form */
           <form onSubmit={handleSubmit} noValidate>
-            {/* Signup Fields */}
             {!isLogin && (
               <>
-                <FormField 
-                  label="Full Name" 
-                  name="name" 
-                  placeholder="John Doe" 
-                  icon={FaUser}
-                  required={!isLogin}
-                  value={formData.name}
-                  onChange={handleChange}
-                  error={fieldErrors.name}
-                />
-
-                <FormField 
-                  label="Phone Number" 
-                  name="phone" 
-                  type="tel"
-                  placeholder="+234 800 000 0000" 
-                  icon={FaPhone}
-                  value={formData.phone}
-                  onChange={handleChange}
-                  error={fieldErrors.phone}
-                />
-
+                <FormField label="Full Name" name="name" placeholder="John Doe" icon={FaUser}
+                  required={!isLogin} value={formData.name} onChange={handleChange} error={fieldErrors.name} />
+                <FormField label="Phone Number" name="phone" type="tel" placeholder="+234 800 000 0000" icon={FaPhone}
+                  value={formData.phone} onChange={handleChange} error={fieldErrors.phone} />
                 <div className="form-group" style={{ marginBottom: '1.25rem' }}>
-                  <label style={{ 
-                    display: 'block', 
-                    marginBottom: '0.5rem', 
-                    fontWeight: '500', 
-                    color: '#2d3436',
-                    fontSize: '0.9rem'
-                  }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '500', color: '#2d3436', fontSize: '0.9rem' }}>
                     I am a<span style={{ color: '#e74c3c', marginLeft: '4px' }}>*</span>
                   </label>
-                  <select 
-                    name="role" 
-                    value={formData.role} 
-                    onChange={handleChange}
-                    style={{ 
-                      width: '100%',
-                      padding: '0.85rem 1rem',
-                      border: '2px solid #dfe6e9',
-                      borderRadius: '10px',
-                      fontSize: '0.95rem',
-                      outline: 'none',
-                      backgroundColor: '#fff',
-                      cursor: 'pointer',
-                      transition: 'border-color 0.2s ease'
-                    }}
+                  <select name="role" value={formData.role} onChange={handleChange}
+                    style={{ width: '100%', padding: '0.85rem 1rem', border: '2px solid #dfe6e9', borderRadius: '10px', fontSize: '0.95rem', outline: 'none', backgroundColor: '#fff', cursor: 'pointer', transition: 'border-color 0.2s ease' }}
                     onFocus={(e) => e.target.style.borderColor = '#4CAF50'}
-                    onBlur={(e) => e.target.style.borderColor = '#dfe6e9'}
-                  >
+                    onBlur={(e) => e.target.style.borderColor = '#dfe6e9'}>
                     <option value="donor">Individual Donor</option>
                     <option value="corporate">Corporate Organization</option>
                     <option value="beneficiary">Beneficiary</option>
                     <option value="vendor">Vendor</option>
                   </select>
                 </div>
-
                 {formData.role === 'corporate' && (
-                  <FormField 
-                    label="Company Name" 
-                    name="companyName" 
-                    placeholder="Company Ltd" 
-                    icon={FaBuilding}
-                    required={formData.role === 'corporate'}
-                    value={formData.companyName}
-                    onChange={handleChange}
-                    error={fieldErrors.companyName}
-                  />
+                  <FormField label="Company Name" name="companyName" placeholder="Company Ltd" icon={FaBuilding}
+                    required={formData.role === 'corporate'} value={formData.companyName} onChange={handleChange} error={fieldErrors.companyName} />
                 )}
               </>
             )}
 
-            {/* Common Fields */}
-            <FormField 
-              label="Email Address" 
-              name="email" 
-              type="email"
-              placeholder="you@example.com" 
-              icon={FaEnvelope}
-              required
-              value={formData.email}
-              onChange={handleChange}
-              error={fieldErrors.email}
-            />
+            <FormField label="Email Address" name="email" type="email" placeholder="you@example.com" icon={FaEnvelope}
+              required value={formData.email} onChange={handleChange} error={fieldErrors.email} />
 
-            <FormField 
-              label="Password" 
-              name="password" 
-              type="password"
-              placeholder={isLogin ? "Enter your password" : "Min 6 characters"} 
-              icon={FaLock}
-              required
-              minLength={!isLogin ? "6" : undefined}
-              value={formData.password}
-              onChange={handleChange}
-              error={fieldErrors.password}
-            />
+            <FormField label="Password" name="password" type="password"
+              placeholder={isLogin ? "Enter your password" : "Min 6 characters"} icon={FaLock}
+              required minLength={!isLogin ? "6" : undefined}
+              value={formData.password} onChange={handleChange} error={fieldErrors.password} />
 
-            {/* Confirm Password - Only for Signup */}
             {!isLogin && (
-              <FormField 
-                label="Confirm Password" 
-                name="confirmPassword" 
-                type="password"
-                placeholder="Re-enter your password" 
-                icon={FaLock}
-                required={!isLogin}
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                error={fieldErrors.confirmPassword}
-              />
+              <FormField label="Confirm Password" name="confirmPassword" type="password"
+                placeholder="Re-enter your password" icon={FaLock}
+                required={!isLogin} value={formData.confirmPassword} onChange={handleChange} error={fieldErrors.confirmPassword} />
             )}
 
             {/* Forgot Password Link - Only for Login */}
             {isLogin && (
-              <div style={{ 
-                textAlign: 'right', 
-                marginBottom: '1rem',
-                marginTop: '-0.5rem'
-              }}>
-                <button 
-                  type="button"
-                  onClick={goToForgotPassword}
+              <div style={{ textAlign: 'right', marginBottom: '1rem', marginTop: '-0.5rem' }}>
+                <button type="button" onClick={goToForgotPassword}
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#1a5f2a',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    fontSize: '0.85rem',
-                    padding: '0',
-                    textDecoration: 'underline',
-                    textUnderlineOffset: '2px'
+                    background: 'none', border: 'none', color: '#1a5f2a', fontWeight: '500',
+                    cursor: 'pointer', fontSize: '0.85rem', padding: '0', textDecoration: 'underline', textUnderlineOffset: '2px'
                   }}
                   onMouseEnter={(e) => e.target.style.color = '#2d8a3e'}
-                  onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}
-                >
+                  onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}>
                   Forgot password?
                 </button>
               </div>
             )}
 
-            {/* Submit Button */}
-            <button 
-              type="submit" 
-              disabled={loading}
+            <button type="submit" disabled={loading}
               style={{ 
-                width: '100%',
-                padding: '1rem',
-                background: loading ? '#4CAF50' : '#1a5f2a',
-                color: '#fff',
-                border: 'none',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                fontWeight: '600',
-                cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease',
-                marginTop: '0.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
+                width: '100%', padding: '1rem', background: loading ? '#4CAF50' : '#1a5f2a',
+                color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem',
+                fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease', marginTop: '0.5rem', display: 'flex',
+                alignItems: 'center', justifyContent: 'center', gap: '8px',
                 boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
               }}
               onMouseEnter={(e) => {
@@ -655,54 +431,31 @@ const Login = () => {
                   e.target.style.transform = 'translateY(0)';
                   e.target.style.boxShadow = '0 4px 15px rgba(26, 95, 42, 0.4)';
                 }
-              }}
-            >
+              }}>
               {loading ? (
                 <>
                   <span style={{
-                    width: '18px',
-                    height: '18px',
-                    border: '2px solid #fff',
-                    borderTopColor: 'transparent',
-                    borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite',
-                    display: 'inline-block'
+                    width: '18px', height: '18px', border: '2px solid #fff',
+                    borderTopColor: 'transparent', borderRadius: '50%',
+                    animation: 'spin 0.8s linear infinite', display: 'inline-block'
                   }} />
                   <span>Please wait...</span>
                 </>
               ) : (
-                <>
-                  <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
-                </>
+                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
               )}
             </button>
 
-            {/* Switch Mode */}
-            <div style={{ 
-              textAlign: 'center', 
-              marginTop: '1.5rem',
-              paddingTop: '1.5rem',
-              borderTop: '1px solid #dfe6e9'
-            }}>
+            <div style={{ textAlign: 'center', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #dfe6e9' }}>
               <p style={{ color: '#636e72', fontSize: '0.9rem' }}>
                 {isLogin ? "Don't have an account? " : "Already have an account? "}
-                <button 
-                  type="button"
-                  onClick={switchMode}
+                <button type="button" onClick={switchMode}
                   style={{
-                    background: 'none',
-                    border: 'none',
-                    color: '#1a5f2a',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    fontSize: '0.9rem',
-                    padding: '0',
-                    textDecoration: 'underline',
-                    textUnderlineOffset: '3px'
+                    background: 'none', border: 'none', color: '#1a5f2a', fontWeight: '600',
+                    cursor: 'pointer', fontSize: '0.9rem', padding: '0', textDecoration: 'underline', textUnderlineOffset: '3px'
                   }}
                   onMouseEnter={(e) => e.target.style.color = '#2d8a3e'}
-                  onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}
-                >
+                  onMouseLeave={(e) => e.target.style.color = '#1a5f2a'}>
                   {isLogin ? 'Sign Up' : 'Sign In'}
                 </button>
               </p>
@@ -711,25 +464,16 @@ const Login = () => {
         )}
       </div>
 
-      {/* CSS Animations */}
       <style>{`
         @keyframes slideUp {
-          from {
-            opacity: 0;
-            transform: translateY(30px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
         }
-
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
           10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
           20%, 40%, 60%, 80% { transform: translateX(4px); }
         }
-
         @keyframes spin {
           to { transform: rotate(360deg); }
         }
