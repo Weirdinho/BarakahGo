@@ -85,7 +85,7 @@ const Navbar = () => {
 
         .logo {
           display: flex;
-          align-items: center;
+          align-items: left;
           gap: 0.5rem;
           text-decoration: none;
           font-weight: 800;
