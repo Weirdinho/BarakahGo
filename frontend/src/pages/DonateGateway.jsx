@@ -170,7 +170,7 @@ const DonateGateway = () => {
 
           <p className="gateway-footer">
             Don't have an account?{' '}
-            <Link to="/register">Create one</Link> to track your donations.
+            <Link to="/login">Create one</Link> to track your donations.
           </p>
         </div>
       </div>
