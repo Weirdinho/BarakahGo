@@ -3,13 +3,27 @@ const router = express.Router();
 const { auth } = require('../middleware/auth');
 const voucherController = require('../controllers/voucherController');
 
-// Beneficiary routes - MUST come before /:code
+// ============================================
+// SPECIFIC routes MUST come BEFORE parameterized routes
+// ============================================
+
+// Get my vouchers (beneficiary)
 router.get('/', auth, voucherController.getMyVouchers);
-router.post('/auto-redeem', auth, voucherController.autoRedeem);  // BEFORE /:code
+
+// Auto-redeem - MUST be before /:code
+router.post('/auto-redeem', auth, voucherController.autoRedeem);
+
+// Get vendor redemptions - MUST be before /:code
 router.get('/vendor/redemptions', auth, voucherController.getVendorRedemptions);
 
-// Vendor routes - MUST come after specific routes
+// ============================================
+// PARAMETERIZED routes come LAST
+// ============================================
+
+// Lookup voucher by code (vendor)
 router.get('/:code', auth, voucherController.lookupVoucher);
+
+// Redeem voucher (vendor)
 router.post('/:code/redeem', auth, voucherController.redeemVoucher);
 
 module.exports = router;
