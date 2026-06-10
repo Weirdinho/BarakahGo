@@ -45,7 +45,7 @@ const voucherSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Generate unique voucher code
+// Generate unique voucher code BEFORE saving
 voucherSchema.pre('save', function(next) {
   if (!this.code) {
     const random = crypto.randomBytes(4).toString('hex').toUpperCase();
