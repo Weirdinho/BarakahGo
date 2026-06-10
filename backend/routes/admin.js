@@ -5,6 +5,8 @@ const adminController = require('../controllers/adminController');
 
 router.get('/stats', auth, adminOnly, adminController.getStats);
 router.get('/users', auth, adminOnly, adminController.getUsers);
+router.delete('/users/:id', auth, adminOnly, adminController.deleteUser);
+router.put('/users/:id/role', auth, adminOnly, adminController.updateUserRole);
 router.get('/donations', auth, adminOnly, adminController.getDonations);
 router.get('/applications', auth, adminOnly, adminController.getApplications);
 router.put('/applications/:id', auth, adminOnly, adminController.updateApplication);

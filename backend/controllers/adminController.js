@@ -1,6 +1,61 @@
 const Application = require('../models/Application');
 const Voucher = require('../models/Voucher');
 const User = require('../models/User');
+const Donation = require('../models/Donation');
+
+// @desc    Get dashboard stats
+// @route   GET /api/admin/stats
+exports.getStats = async (req, res) => {
+  try {
+    const totalUsers = await User.countDocuments();
+    const totalDonations = await Donation.aggregate([
+      { $match: { status: 'success' } },
+      { $group: { _id: null, total: { $sum: '$amount' } } }
+    ]);
+    const pendingApplications = await Application.countDocuments({ status: 'pending' });
+    const totalVouchers = await Voucher.countDocuments();
+    const activeVouchers = await Voucher.countDocuments({ status: 'active' });
+    const redeemedVouchers = await Voucher.countDocuments({ status: 'redeemed' });
+
+    res.json({
+      totalUsers,
+      totalAmount: totalDonations[0]?.total || 0,
+      pendingApplications,
+      totalVouchers,
+      activeVouchers,
+      redeemedVouchers
+    });
+  } catch (error) {
+    console.error('GET STATS ERROR:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Get all users
+// @route   GET /api/admin/users
+exports.getUsers = async (req, res) => {
+  try {
+    const users = await User.find().select('-password').sort({ createdAt: -1 });
+    res.json(users);
+  } catch (error) {
+    console.error('GET USERS ERROR:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Get all donations
+// @route   GET /api/admin/donations
+exports.getDonations = async (req, res) => {
+  try {
+    const donations = await Donation.find()
+      .populate('donor', 'name email')
+      .sort({ createdAt: -1 });
+    res.json(donations);
+  } catch (error) {
+    console.error('GET DONATIONS ERROR:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 
 // @desc    Get all applications
 // @route   GET /api/admin/applications
@@ -17,7 +72,7 @@ exports.getApplications = async (req, res) => {
   }
 };
 
-// @desc    Approve application and generate voucher
+// @desc    Approve/reject application and generate voucher
 // @route   PUT /api/admin/applications/:id
 exports.updateApplication = async (req, res) => {
   try {
@@ -109,25 +164,6 @@ exports.updateApplication = async (req, res) => {
   }
 };
 
-// @desc    Reject application
-// @route   PUT /api/admin/applications/:id/reject
-exports.rejectApplication = async (req, res) => {
-  try {
-    const application = await Application.findById(req.params.id);
-    if (!application) {
-      return res.status(404).json({ message: 'Application not found' });
-    }
-
-    application.status = 'rejected';
-    await application.save();
-
-    res.json({ message: 'Application rejected' });
-  } catch (error) {
-    console.error('REJECT APPLICATION ERROR:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
 // @desc    Get all vouchers
 // @route   GET /api/admin/vouchers
 exports.getVouchers = async (req, res) => {
@@ -144,30 +180,73 @@ exports.getVouchers = async (req, res) => {
   }
 };
 
-// @desc    Get dashboard stats
-// @route   GET /api/admin/stats
-exports.getStats = async (req, res) => {
+// @desc    Get pending vendor approvals
+// @route   GET /api/admin/vendors/pending
+exports.getPendingVendors = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
-    const totalDonations = await Donation.aggregate([
-      { $match: { status: 'success' } },
-      { $group: { _id: null, total: { $sum: '$amount' } } }
-    ]);
-    const pendingApplications = await Application.countDocuments({ status: 'pending' });
-    const totalVouchers = await Voucher.countDocuments();
-    const activeVouchers = await Voucher.countDocuments({ status: 'active' });
-    const redeemedVouchers = await Voucher.countDocuments({ status: 'redeemed' });
-
-    res.json({
-      totalUsers,
-      totalAmount: totalDonations[0]?.total || 0,
-      pendingApplications,
-      totalVouchers,
-      activeVouchers,
-      redeemedVouchers
-    });
+    const vendors = await User.find({ role: 'vendor', isApproved: false })
+      .select('-password');
+    res.json(vendors);
   } catch (error) {
-    console.error('GET STATS ERROR:', error);
+    console.error('GET PENDING VENDORS ERROR:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Approve vendor
+// @route   PUT /api/admin/vendors/:id/approve
+exports.approveVendor = async (req, res) => {
+  try {
+    const vendor = await User.findByIdAndUpdate(
+      req.params.id,
+      { isApproved: true },
+      { new: true }
+    ).select('-password');
+
+    if (!vendor) {
+      return res.status(404).json({ message: 'Vendor not found' });
+    }
+
+    res.json({ message: 'Vendor approved successfully', vendor });
+  } catch (error) {
+    console.error('APPROVE VENDOR ERROR:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/admin/users/:id
+exports.deleteUser = async (req, res) => {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('DELETE USER ERROR:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// @desc    Update user role
+// @route   PUT /api/admin/users/:id/role
+exports.updateUserRole = async (req, res) => {
+  try {
+    const { role } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select('-password');
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json({ message: 'Role updated successfully', user });
+  } catch (error) {
+    console.error('UPDATE ROLE ERROR:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };
