@@ -2,6 +2,7 @@ const Application = require('../models/Application');
 const Voucher = require('../models/Voucher');
 const User = require('../models/User');
 const Donation = require('../models/Donation');
+const crypto = require('crypto');
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -93,14 +94,18 @@ exports.updateApplication = async (req, res) => {
       console.log('🎫 Generating voucher for amount:', application.amount);
 
       try {
+        const random = crypto.randomBytes(4).toString('hex').toUpperCase();
+        const code = `AMN-${application.category.substring(0, 3).toUpperCase()}-${random}`;
+
         const voucher = new Voucher({
+          code: code,
           amount: application.amount,
           category: application.category,
           beneficiary: application.applicant,
           application: application._id
         });
 
-        console.log('📝 Voucher object created:', voucher);
+        console.log('📝 Voucher object created with code:', code);
 
         await voucher.save();
         console.log('✅ Voucher saved:', voucher.code);
