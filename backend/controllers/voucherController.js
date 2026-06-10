@@ -1,4 +1,5 @@
 const Voucher = require('../models/Voucher');
+const User = require('../models/User');
 
 // @desc    Get beneficiary's vouchers
 // @route   GET /api/vouchers
