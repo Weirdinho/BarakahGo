@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   FaHandHoldingHeart, FaClipboardList, FaTicketAlt, 
-  FaCheckCircle, FaClock, FaTimesCircle, FaPlus 
+  FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaCopy
 } from 'react-icons/fa';
-import VoucherCard from '../components/VoucherCard';
 import api from '../services/api';
 
 const categories = [
   { id: 'zakat', label: 'Zakat' },
   { id: 'sadaqah', label: 'Sadaqah' },
+  { id: 'sadaqah-jariyah', label: 'Sadaqah Jariyah' },
   { id: 'waqf', label: 'Waqf Support' },
-  { id: 'food-aid', label: 'Food Aid' },
+  { id: 'food', label: 'Food Aid' },
   { id: 'education', label: 'Education' },
   { id: 'healthcare', label: 'Healthcare' },
   { id: 'general-fund', label: 'General Fund' }
@@ -19,7 +19,6 @@ const categories = [
 
 const BeneficiaryPage = () => {
   const { user } = useAuth();
-  const [vouchers, setVouchers] = useState([]);
   const [applications, setApplications] = useState([]);
   const [showApplyForm, setShowApplyForm] = useState(false);
   const [formData, setFormData] = useState({
@@ -36,11 +35,7 @@ const BeneficiaryPage = () => {
 
   const fetchData = async () => {
     try {
-      const [vouchersRes, appsRes] = await Promise.all([
-        api.get('/vouchers'),
-        api.get('/donations/applications')
-      ]);
-      setVouchers(vouchersRes.data);
+      const appsRes = await api.get('/donations/applications');
       setApplications(appsRes.data);
     } catch (err) {
       console.error(err);
@@ -65,6 +60,11 @@ const BeneficiaryPage = () => {
     }
   };
 
+  const copyVoucherCode = (code) => {
+    navigator.clipboard.writeText(code);
+    alert('Voucher code copied to clipboard!');
+  };
+
   const getStatusIcon = (status) => {
     switch (status) {
       case 'approved': return <FaCheckCircle style={{ color: '#2d8a3e' }} />;
@@ -74,6 +74,11 @@ const BeneficiaryPage = () => {
       default: return null;
     }
   };
+
+  // Count stats
+  const pendingCount = applications.filter(a => a.status === 'pending').length;
+  const approvedCount = applications.filter(a => a.status === 'approved' || a.status === 'fulfilled').length;
+  const voucherCount = applications.filter(a => a.voucher).length;
 
   if (loading) {
     return (
@@ -153,64 +158,50 @@ const BeneficiaryPage = () => {
         {/* Stats */}
         <div className="stats-grid">
           <div className="stat-card">
-            <h4>My Vouchers</h4>
-            <div className="value">{vouchers.length}</div>
-          </div>
-          <div className="stat-card">
             <h4>Applications</h4>
             <div className="value">{applications.length}</div>
           </div>
           <div className="stat-card">
             <h4>Pending</h4>
-            <div className="value">{applications.filter(a => a.status === 'pending').length}</div>
+            <div className="value">{pendingCount}</div>
           </div>
           <div className="stat-card">
             <h4>Approved</h4>
-            <div className="value">{applications.filter(a => a.status === 'approved' || a.status === 'fulfilled').length}</div>
+            <div className="value">{approvedCount}</div>
+          </div>
+          <div className="stat-card">
+            <h4>My Vouchers</h4>
+            <div className="value">{voucherCount}</div>
           </div>
         </div>
 
-        <div className="dashboard-grid">
-          {/* My Vouchers */}
-          <div className="dashboard-card">
-            <h3><FaTicketAlt /> My Vouchers</h3>
-            {vouchers.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#636e72' }}>
-                <FaHandHoldingHeart style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }} />
-                <p>No vouchers yet. Apply for aid to receive vouchers.</p>
-              </div>
-            ) : (
-              vouchers.map(voucher => (
-                <VoucherCard key={voucher._id} voucher={voucher} />
-              ))
-            )}
-          </div>
-
-          {/* My Applications */}
-          <div className="dashboard-card">
-            <h3><FaClipboardList /> My Applications</h3>
-            {applications.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '2rem', color: '#636e72' }}>
-                <p>No applications yet. Click "Apply for Aid" to get started.</p>
-              </div>
-            ) : (
-              applications.map(app => (
-                <div key={app._id} style={{
-                  padding: '1rem',
-                  borderBottom: '1px solid #dfe6e9',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
+        {/* My Applications */}
+        <div className="dashboard-card" style={{ marginTop: '2rem' }}>
+          <h3><FaClipboardList /> My Applications</h3>
+          {applications.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#636e72' }}>
+              <FaHandHoldingHeart style={{ fontSize: '2rem', marginBottom: '0.5rem', opacity: 0.5 }} />
+              <p>No applications yet. Click "Apply for Aid" to get started.</p>
+            </div>
+          ) : (
+            applications.map(app => (
+              <div key={app._id} style={{
+                padding: '1.25rem',
+                borderBottom: '1px solid #dfe6e9',
+                background: app.status === 'approved' ? '#f0fdf4' : 'transparent'
+              }}>
+                {/* Application Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
                   <div>
-                    <h4 style={{ fontSize: '0.95rem' }}>{categories.find(c => c.id === app.category)?.label || app.category}</h4>
-                    <p style={{ fontSize: '0.8rem', color: '#636e72' }}>₦{app.amount.toLocaleString()}</p>
-                    <p style={{ fontSize: '0.75rem', color: '#636e72' }}>{app.reason.substring(0, 40)}...</p>
+                    <h4 style={{ fontSize: '1rem', marginBottom: '0.25rem' }}>
+                      {categories.find(c => c.id === app.category)?.label || app.category}
+                    </h4>
+                    <p style={{ fontSize: '0.85rem', color: '#636e72' }}>₦{app.amount.toLocaleString()}</p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     {getStatusIcon(app.status)}
                     <span style={{ 
-                      fontSize: '0.75rem', 
+                      fontSize: '0.8rem', 
                       fontWeight: 600,
                       textTransform: 'uppercase',
                       color: app.status === 'approved' ? '#2d8a3e' : app.status === 'rejected' ? '#e76f51' : '#f4a261'
@@ -219,9 +210,81 @@ const BeneficiaryPage = () => {
                     </span>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
+
+                <p style={{ fontSize: '0.85rem', color: '#636e72', marginBottom: '0.75rem' }}>
+                  {app.reason}
+                </p>
+
+                {/* Voucher Section - Only shown when approved */}
+                {app.voucher && (
+                  <div style={{
+                    background: '#1a5f2a',
+                    borderRadius: '10px',
+                    padding: '1rem',
+                    color: 'white',
+                    marginTop: '0.75rem'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                      <span style={{ fontSize: '0.8rem', opacity: 0.9 }}><FaTicketAlt /> Your Voucher</span>
+                      <span style={{ 
+                        fontSize: '0.75rem', 
+                        padding: '0.25rem 0.5rem',
+                        background: app.voucher.status === 'active' ? '#22c55e' : '#6b7280',
+                        borderRadius: '4px'
+                      }}>
+                        {app.voucher.status}
+                      </span>
+                    </div>
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      background: 'rgba(255,255,255,0.15)',
+                      padding: '0.75rem',
+                      borderRadius: '6px',
+                      marginBottom: '0.5rem'
+                    }}>
+                      <code style={{ fontSize: '1.1rem', fontWeight: 700, letterSpacing: '2px' }}>
+                        {app.voucher.code}
+                      </code>
+                      <button 
+                        onClick={() => copyVoucherCode(app.voucher.code)}
+                        style={{
+                          background: 'rgba(255,255,255,0.2)',
+                          border: 'none',
+                          color: 'white',
+                          padding: '0.4rem 0.75rem',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                          fontSize: '0.8rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.25rem'
+                        }}
+                      >
+                        <FaCopy /> Copy
+                      </button>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem' }}>
+                      <span>Amount: ₦{app.voucher.amount.toLocaleString()}</span>
+                      {app.voucher.redeemedAmount > 0 && (
+                        <span>Used: ₦{app.voucher.redeemedAmount.toLocaleString()}</span>
+                      )}
+                    </div>
+                    {app.voucher.status === 'active' && (
+                      <p style={{ fontSize: '0.75rem', marginTop: '0.5rem', opacity: 0.8 }}>
+                        Present this code to any authorized vendor to redeem your aid.
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.5rem' }}>
+                  Applied on {new Date(app.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

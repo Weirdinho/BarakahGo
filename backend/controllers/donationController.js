@@ -1,58 +1,33 @@
-const axios = require('axios');
-const { validationResult } = require('express-validator');
 const Donation = require('../models/Donation');
-const Voucher = require('../models/Voucher');
-const User = require('../models/User');
-const Application = require('../models/Application');
+const axios = require('axios');
 
-const PAYSTACK_BASE_URL = 'https://api.paystack.co';
+// @desc    Initialize payment
+// @route   POST /api/donations/initialize
+exports.initializePayment = async (req, res) => {
+  try {
+    const { amount, category, message, isAnonymous } = req.body;
 
-const generateVouchers = async (donation) => {
-  const voucherCount = donation.beneficiariesCount;
-  const voucherAmount = Math.floor(donation.amount / voucherCount);
-  const vouchers = [];
-
-  for (let i = 0; i < voucherCount; i++) {
-    const code = `GBK-${donation.category.toUpperCase().substr(0, 3)}-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
-    
-    const voucher = new Voucher({
-      code,
-      donation: donation._id,
-      amount: voucherAmount,
-      category: donation.category
+    const donation = new Donation({
+      donor: req.user.id,
+      amount,
+      category,
+      message,
+      isAnonymous
     });
 
-    await voucher.save();
-    vouchers.push(voucher);
-  }
+    await donation.save();
 
-  return vouchers;
-};
-
-exports.initializePayment = async (req, res) => {
-  const errors = validationResult(req);
-  if (!errors.isEmpty()) {
-    return res.status(400).json({ errors: errors.array() });
-  }
-
-  try {
-    const { amount, category, message, isAnonymous, beneficiariesCount } = req.body;
-    const user = req.user;
-
-    const reference = `GBK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
+    // Initialize Paystack transaction
     const response = await axios.post(
-      `${PAYSTACK_BASE_URL}/transaction/initialize`,
+      'https://api.paystack.co/transaction/initialize',
       {
-        email: user.email,
-        amount: amount * 100,
-        reference,
-        callback_url: `${process.env.FRONTEND_URL || 'http://localhost:3000'}/donate/verify`,
+        email: req.user.email,
+        amount: amount * 100, // Paystack expects kobo
+        callback_url: `${process.env.FRONTEND_URL}/donate/verify`,
         metadata: {
+          donation_id: donation._id.toString(),
           custom_fields: [
-            { display_name: "Donor Name", variable_name: "donor_name", value: user.name },
-            { display_name: "Category", variable_name: "category", value: category },
-            { display_name: "Beneficiaries", variable_name: "beneficiaries", value: beneficiariesCount || 1 }
+            { display_name: "Donation Category", variable_name: "category", value: category }
           ]
         }
       },
@@ -64,37 +39,27 @@ exports.initializePayment = async (req, res) => {
       }
     );
 
-    const donation = new Donation({
-      donor: user._id,
-      amount: parseFloat(amount),
-      category,
-      paystackReference: reference,
-      status: 'pending',
-      message,
-      isAnonymous: isAnonymous || false,
-      beneficiariesCount: beneficiariesCount || 1,
-      metadata: response.data.data
-    });
-
+    donation.paystackReference = response.data.data.reference;
     await donation.save();
 
     res.json({
       authorization_url: response.data.data.authorization_url,
-      reference,
-      donation: donation._id
+      reference: response.data.data.reference
     });
   } catch (error) {
-    console.error('Paystack initialization error:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Payment initialization failed', error: error.message });
+    console.error('INITIALIZE PAYMENT ERROR:', error);
+    res.status(500).json({ message: 'Failed to initialize payment' });
   }
 };
 
+// @desc    Verify payment
+// @route   GET /api/donations/verify/:reference
 exports.verifyPayment = async (req, res) => {
   try {
     const { reference } = req.params;
 
     const response = await axios.get(
-      `${PAYSTACK_BASE_URL}/transaction/verify/${reference}`,
+      `https://api.paystack.co/transaction/verify/${reference}`,
       {
         headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
@@ -102,96 +67,30 @@ exports.verifyPayment = async (req, res) => {
       }
     );
 
-    const { status, data } = response.data;
+    const { status, metadata } = response.data.data;
 
-    if (status && data.status === 'success') {
-      const donation = await Donation.findOneAndUpdate(
-        { paystackReference: reference },
-        {
-          status: 'success',
-          paystackTransactionId: data.id.toString(),
-          metadata: data
-        },
-        { new: true }
-      );
+    if (status === 'success') {
+      const donation = await Donation.findOne({ paystackReference: reference });
+      if (donation) {
+        donation.status = 'success';
+        await donation.save();
 
-      await User.findByIdAndUpdate(donation.donor, {
-        $inc: { totalDonated: donation.amount }
-      });
+        // Update donor's total donated
+        await User.findByIdAndUpdate(donation.donor, {
+          $inc: { totalDonated: donation.amount }
+        });
+      }
 
-      const vouchers = await generateVouchers(donation);
-
-      res.json({
-        success: true,
-        donation,
-        vouchers
-      });
+      res.json({ success: true, message: 'Payment verified successfully' });
     } else {
       await Donation.findOneAndUpdate(
         { paystackReference: reference },
         { status: 'failed' }
       );
-      res.json({ success: false, message: 'Payment verification failed' });
+      res.json({ success: false, message: 'Payment failed' });
     }
   } catch (error) {
-    console.error('Verification error:', error.response?.data || error.message);
-    res.status(500).json({ message: 'Verification failed' });
-  }
-};
-
-exports.getDonations = async (req, res) => {
-  try {
-    const donations = await Donation.find({ donor: req.user.id })
-      .sort({ createdAt: -1 })
-      .populate('donor', 'name email');
-    res.json(donations);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-exports.getAllDonations = async (req, res) => {
-  try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: 'Admin access required' });
-    }
-    const donations = await Donation.find()
-      .sort({ createdAt: -1 })
-      .populate('donor', 'name email');
-    res.json(donations);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// @desc    Submit aid application (beneficiary)
-// @route   POST /api/donations/apply
-exports.applyForAid = async (req, res) => {
-  try {
-    const { category, amount, reason } = req.body;
-    
-    const application = new Application({
-      applicant: req.user.id,
-      category,
-      amount,
-      reason
-    });
-
-    await application.save();
-    res.status(201).json(application);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// @desc    Get my applications (beneficiary)
-// @route   GET /api/donations/applications
-exports.getMyApplications = async (req, res) => {
-  try {
-    const applications = await Application.find({ applicant: req.user.id })
-      .sort({ createdAt: -1 });
-    res.json(applications);
-  } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    console.error('VERIFY PAYMENT ERROR:', error);
+    res.status(500).json({ message: 'Failed to verify payment' });
   }
 };

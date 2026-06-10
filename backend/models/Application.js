@@ -8,8 +8,8 @@ const applicationSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['zakat', 'sadaqah', 'waqf', 'food-aid', 'education', 'healthcare', 'general-fund'],
-    required: true
+    required: true,
+    enum: ['zakat', 'sadaqah', 'sadaqah-jariyah', 'waqf', 'food', 'education', 'healthcare', 'general-fund']
   },
   amount: {
     type: Number,
@@ -18,36 +18,21 @@ const applicationSchema = new mongoose.Schema({
   },
   reason: {
     type: String,
-    required: true,
-    trim: true
+    required: true
   },
-  documents: [{
-    type: String // URLs to uploaded documents
-  }],
   status: {
     type: String,
     enum: ['pending', 'approved', 'rejected', 'fulfilled'],
     default: 'pending'
   },
-  approvedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  approvedAt: {
-    type: Date
-  },
-  donation: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Donation'
-  },
+  // Voucher generated when approved
   voucher: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Voucher'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+    ref: 'Voucher',
+    default: null
   }
+}, {
+  timestamps: true
 });
 
 module.exports = mongoose.model('Application', applicationSchema);

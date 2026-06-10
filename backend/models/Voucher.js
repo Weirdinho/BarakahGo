@@ -1,24 +1,11 @@
 const mongoose = require('mongoose');
+const crypto = require('crypto');
 
 const voucherSchema = new mongoose.Schema({
   code: {
     type: String,
     required: true,
-    unique: true,
-    uppercase: true
-  },
-  donation: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Donation',
-    required: true
-  },
-  beneficiary: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  },
-  vendor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Vendor'
+    unique: true
   },
   amount: {
     type: Number,
@@ -26,7 +13,16 @@ const voucherSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['zakat', 'sadaqah', 'waqf', 'food-aid', 'education', 'healthcare', 'general-fund'],
+    required: true
+  },
+  beneficiary: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  application: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Application',
     required: true
   },
   status: {
@@ -34,26 +30,28 @@ const voucherSchema = new mongoose.Schema({
     enum: ['active', 'redeemed', 'expired', 'cancelled'],
     default: 'active'
   },
-  redeemedAt: {
-    type: Date
-  },
   redeemedAmount: {
     type: Number,
     default: 0
   },
-  expiryDate: {
-    type: Date,
-    default: function() {
-      return new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 days
-    }
+  redeemedAt: {
+    type: Date
   },
-  qrCode: {
-    type: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  vendor: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
   }
+}, {
+  timestamps: true
+});
+
+// Generate unique voucher code
+voucherSchema.pre('save', function(next) {
+  if (!this.code) {
+    const random = crypto.randomBytes(4).toString('hex').toUpperCase();
+    this.code = `AMN-${this.category.substring(0, 3).toUpperCase()}-${random}`;
+  }
+  next();
 });
 
 module.exports = mongoose.model('Voucher', voucherSchema);

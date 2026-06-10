@@ -326,50 +326,67 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const renderApplications = () => (
-    <div>
-      <h3 style={{ marginBottom: '1rem' }}>Aid Applications ({applications.length})</h3>
-      <div className="admin-table-container">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Applicant</th>
-              <th>Category</th>
-              <th>Amount</th>
-              <th>Reason</th>
-              <th>Status</th>
-              <th>Actions</th>
+ const renderApplications = () => (
+  <div>
+    <h3 style={{ marginBottom: '1rem' }}>Aid Applications ({applications.length})</h3>
+    <div className="admin-table-container">
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Applicant</th>
+            <th>Category</th>
+            <th>Amount</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Voucher</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {applications.map(app => (
+            <tr key={app._id}>
+              <td>{app.applicant?.name}</td>
+              <td>{app.category}</td>
+              <td>₦{app.amount.toLocaleString()}</td>
+              <td>{app.reason.substring(0, 40)}...</td>
+              <td>
+                <span className={`status-badge ${app.status}`}>{app.status}</span>
+              </td>
+              <td>
+                {app.voucher ? (
+                  <code style={{ 
+                    background: '#e8f5e9', 
+                    color: '#1a5f2a',
+                    padding: '0.25rem 0.5rem',
+                    borderRadius: '4px',
+                    fontSize: '0.8rem',
+                    fontWeight: 600
+                  }}>
+                    {app.voucher.code}
+                  </code>
+                ) : (
+                  <span style={{ color: '#94a3b8', fontSize: '0.8rem' }}>—</span>
+                )}
+              </td>
+              <td>
+                {app.status === 'pending' && (
+                  <>
+                    <button onClick={() => handleApproveApplication(app._id, 'approved')} className="action-btn approve">
+                      <FaCheck /> Approve
+                    </button>
+                    <button onClick={() => handleApproveApplication(app._id, 'rejected')} className="action-btn reject">
+                      <FaTimes /> Reject
+                    </button>
+                  </>
+                )}
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {applications.map(app => (
-              <tr key={app._id}>
-                <td>{app.applicant?.name}</td>
-                <td>{app.category}</td>
-                <td>₦{app.amount.toLocaleString()}</td>
-                <td>{app.reason.substring(0, 50)}...</td>
-                <td>
-                  <span className={`status-badge ${app.status}`}>{app.status}</span>
-                </td>
-                <td>
-                  {app.status === 'pending' && (
-                    <>
-                      <button onClick={() => handleApproveApplication(app._id, 'approved')} className="action-btn approve">
-                        <FaCheck />
-                      </button>
-                      <button onClick={() => handleApproveApplication(app._id, 'rejected')} className="action-btn reject">
-                        <FaTimes />
-                      </button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+          ))}
+        </tbody>
+      </table>
     </div>
-  );
+  </div>
+);
 
   const renderVouchers = () => (
     <div>

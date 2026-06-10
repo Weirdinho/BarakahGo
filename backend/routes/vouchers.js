@@ -3,16 +3,12 @@ const router = express.Router();
 const { auth } = require('../middleware/auth');
 const voucherController = require('../controllers/voucherController');
 
-// @route   GET /api/vouchers
-// @desc    Get user's vouchers
-router.get('/', auth, voucherController.getVouchers);
+// Beneficiary routes
+router.get('/', auth, voucherController.getMyVouchers);
 
-// @route   GET /api/vouchers/:code
-// @desc    Get voucher by code
-router.get('/:code', auth, voucherController.getVoucherByCode);
-
-// @route   POST /api/vouchers/:code/redeem
-// @desc    Redeem voucher at vendor
+// Vendor routes
+router.get('/:code', auth, voucherController.lookupVoucher);
 router.post('/:code/redeem', auth, voucherController.redeemVoucher);
+router.get('/vendor/redemptions', auth, voucherController.getVendorRedemptions);
 
 module.exports = router;
