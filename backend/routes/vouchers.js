@@ -10,5 +10,6 @@ router.get('/', auth, voucherController.getMyVouchers);
 router.get('/:code', auth, voucherController.lookupVoucher);
 router.post('/:code/redeem', auth, voucherController.redeemVoucher);
 router.get('/vendor/redemptions', auth, voucherController.getVendorRedemptions);
+router.post('/auto-redeem', auth, voucherController.autoRedeem);
 
 module.exports = router;
