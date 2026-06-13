@@ -1,21 +1,22 @@
 // src/pages/PaymentVerify.jsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { 
   FaCheckCircle, 
   FaTimesCircle, 
   FaSpinner, 
-  FaReceipt, 
   FaHome,
   FaRedo,
-  FaDownload
+  FaDownload,
+  FaPrint
 } from 'react-icons/fa';
 
 const PaymentVerify = () => {
   const [searchParams] = useSearchParams();
-  const [status, setStatus] = useState('verifying'); // verifying | success | failed
+  const [status, setStatus] = useState('verifying');
   const [paymentData, setPaymentData] = useState(null);
   const [error, setError] = useState('');
+  const receiptRef = useRef(null);
 
   const reference = searchParams.get('reference') || searchParams.get('trxref');
   const API_URL = process.env.REACT_APP_API_URL || '';
@@ -59,6 +60,149 @@ const PaymentVerify = () => {
       dateStyle: 'medium',
       timeStyle: 'short'
     });
+  };
+
+  const handlePrintReceipt = () => {
+    const printContent = receiptRef.current.innerHTML;
+    const printWindow = window.open('', '_blank', 'width=600,height=700');
+    
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Donation Receipt - ${paymentData?.reference || ''}</title>
+          <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; 
+              background: #f8f9fa; 
+              padding: 40px 20px;
+              color: #2d3436;
+            }
+            .receipt-container {
+              max-width: 400px;
+              margin: 0 auto;
+              background: white;
+              border-radius: 16px;
+              padding: 40px 32px;
+              box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            }
+            .receipt-header {
+              text-align: center;
+              border-bottom: 2px dashed #e9ecef;
+              padding-bottom: 24px;
+              margin-bottom: 24px;
+            }
+            .receipt-logo {
+              width: 60px;
+              height: 60px;
+              background: linear-gradient(135deg, #1a5f2a 0%, #2d8a3e 100%);
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 16px;
+              color: white;
+              font-size: 28px;
+              font-weight: 700;
+            }
+            .receipt-title {
+              font-size: 20px;
+              font-weight: 700;
+              color: #1a5f2a;
+              margin-bottom: 4px;
+            }
+            .receipt-subtitle {
+              font-size: 13px;
+              color: #636e72;
+            }
+            .receipt-status {
+              display: inline-block;
+              background: #d4edda;
+              color: #1a5f2a;
+              padding: 6px 16px;
+              border-radius: 20px;
+              font-size: 12px;
+              font-weight: 600;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              margin-top: 12px;
+            }
+            .receipt-row {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 14px 0;
+              border-bottom: 1px solid #f1f3f5;
+            }
+            .receipt-row:last-child {
+              border-bottom: none;
+            }
+            .receipt-label {
+              font-size: 13px;
+              color: #636e72;
+              font-weight: 500;
+            }
+            .receipt-value {
+              font-size: 14px;
+              color: #2d3436;
+              font-weight: 600;
+              text-align: right;
+            }
+            .receipt-value.amount {
+              color: #1a5f2a;
+              font-size: 18px;
+              font-weight: 700;
+            }
+            .receipt-value.ref {
+              font-family: 'SF Mono', Monaco, monospace;
+              font-size: 12px;
+              background: #f8f9fa;
+              padding: 4px 10px;
+              border-radius: 6px;
+            }
+            .receipt-footer {
+              text-align: center;
+              margin-top: 24px;
+              padding-top: 24px;
+              border-top: 2px dashed #e9ecef;
+            }
+            .receipt-footer p {
+              font-size: 12px;
+              color: #b2bec3;
+              line-height: 1.6;
+            }
+            .receipt-footer .brand {
+              color: #1a5f2a;
+              font-weight: 700;
+              font-size: 14px;
+              margin-bottom: 4px;
+            }
+            @media print {
+              body { background: white; padding: 0; }
+              .receipt-container { box-shadow: none; max-width: 100%; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-container">
+            ${printContent}
+          </div>
+          <div class="no-print" style="text-align:center;margin-top:30px;">
+            <button onclick="window.print()" style="background:#1a5f2a;color:white;border:none;padding:12px 32px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;">
+              Print / Save as PDF
+            </button>
+          </div>
+          <script>
+            window.onload = function() { document.title = 'Receipt - ${paymentData?.reference || ''}'; };
+          </script>
+        </body>
+      </html>
+    `);
+    
+    printWindow.document.close();
   };
 
   return (
@@ -271,11 +415,52 @@ const PaymentVerify = () => {
                 Your donation has been received successfully. You are making a real difference!
               </p>
 
+              {/* Hidden receipt template for printing */}
+              <div style={{ display: 'none' }}>
+                <div ref={receiptRef}>
+                  <div className="receipt-header">
+                    <div className="receipt-logo">ACF</div>
+                    <div className="receipt-title">Ammanah Charity Foundation</div>
+                    <div className="receipt-subtitle">Official Donation Receipt</div>
+                    <div className="receipt-status">Payment Successful</div>
+                  </div>
+                  
+                  <div className="receipt-row">
+                    <span className="receipt-label">Amount</span>
+                    <span className="receipt-value amount">{formatAmount(paymentData?.amount)}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="receipt-label">Reference</span>
+                    <span className="receipt-value ref">{paymentData?.reference}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="receipt-label">Date</span>
+                    <span className="receipt-value">{formatDate(paymentData?.paid_at)}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="receipt-label">Channel</span>
+                    <span className="receipt-value">{paymentData?.channel || 'Card'}</span>
+                  </div>
+                  <div className="receipt-row">
+                    <span className="receipt-label">Transaction ID</span>
+                    <span className="receipt-value ref">{paymentData?.id}</span>
+                  </div>
+                  
+                  <div className="receipt-footer">
+                    <div className="brand">Ammanah Charity Foundation</div>
+                    <p>Thank you for your generosity!</p>
+                    <p>For questions, contact us at support@barakahgo.com</p>
+                    <p style={{marginTop:'8px',fontSize:'11px',color:'#b2bec3'}}>This is an official receipt for your donation.</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Visible receipt preview */}
               {paymentData && (
                 <div className="receipt-box">
                   <div className="receipt-row">
                     <span className="receipt-label">Amount</span>
-                    <span className="receipt-value amount">{formatAmount(paymentData.amount / 100)}</span>
+                    <span className="receipt-value amount">{formatAmount(paymentData.amount)}</span>
                   </div>
                   <div className="receipt-row">
                     <span className="receipt-label">Reference</span>
@@ -293,16 +478,12 @@ const PaymentVerify = () => {
               )}
 
               <div className="verify-actions">
-                {paymentData?.receipt_url && (
-                  <a 
-                    href={paymentData.receipt_url} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="verify-btn verify-btn-secondary"
-                  >
-                    <FaDownload /> Download Receipt
-                  </a>
-                )}
+                <button 
+                  onClick={handlePrintReceipt}
+                  className="verify-btn verify-btn-secondary"
+                >
+                  <FaPrint /> Download Receipt
+                </button>
                 <Link to="/" className="verify-btn verify-btn-primary">
                   <FaHome /> Back to Home
                 </Link>
