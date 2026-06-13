@@ -146,7 +146,7 @@ const About = () => {
   <div className="team-member">
     <img className="team-avatar" src={MA} alt="Prof Mustapha Abubakar" />
     <h4>Prof Mustapha Abubakar</h4>
-    <p>Founder & CEO</p>
+    <p>Founder & Chairman</p>
   </div>
 
   <div className="team-member">

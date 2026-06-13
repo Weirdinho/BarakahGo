@@ -94,7 +94,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/donate" element={<Donate />} />
-        <Route path="/donate/verify" element={<Donate verifyMode={true} />} />
+<Route path="/donate/verify" element={<PaymentVerify />} />
         <Route path="/login" element={<Login />} />
         <Route path="/portal" element={<RoleRedirect />} />
         
@@ -106,7 +106,7 @@ const AppContent = () => {
         <Route path="/terms" element={<Terms />} />
         <Route path="/donateGateway" element={<DonateGateway />} />
         <Route path="/donateGateway/guest" element={<GuestDonate />} />
-        <Route path="/donate/verify" element={<PaymentVerify />} />
+
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/partnerships" element={<Partnerships />} /> {/* ← NEW */}
         <Route path="/faq" element={<FAQ />} /> {/* ← NEW */}

@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom';
 import { 
   FaLock, 
   FaEnvelope, 
-  FaUser, 
   FaCoins, 
   FaCreditCard,
   FaSpinner,
@@ -14,10 +13,8 @@ import {
 
 const GuestDonate = () => {
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
-    amount: '',
-    phone: ''
+    amount: ''
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -36,9 +33,8 @@ const GuestDonate = () => {
 
   const validate = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Full name is required';
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email is required for receipt';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
     }
@@ -77,19 +73,9 @@ const GuestDonate = () => {
           metadata: {
             custom_fields: [
               {
-                display_name: "Donor Name",
-                variable_name: "donor_name",
-                value: formData.name
-              },
-              {
-                display_name: "Phone Number",
-                variable_name: "phone",
-                value: formData.phone || 'N/A'
-              },
-              {
                 display_name: "Donation Type",
                 variable_name: "donation_type",
-                value: "Guest Donation"
+                value: "Anonymous Donation"
               }
             ]
           }
@@ -350,30 +336,11 @@ const GuestDonate = () => {
           font-weight: 500;
         }
 
-        .guest-footer {
-          text-align: center;
-          margin-top: 1.75rem;
-          padding-top: 1.5rem;
-          border-top: 1px solid #e9ecef;
-          font-size: 0.9rem;
-          color: #636e72;
-        }
-
-        .guest-footer a {
-          color: #1a5f2a;
-          font-weight: 600;
-          text-decoration: none;
-          transition: color 0.3s ease;
-        }
-
-        .guest-footer a:hover {
-          text-decoration: underline;
-        }
-
-        .optional-tag {
-          font-weight: 400;
-          color: #b2bec3;
+        .email-note {
           font-size: 0.8rem;
+          color: #b2bec3;
+          margin-top: 0.25rem;
+          font-weight: 400;
         }
 
         @media (max-width: 480px) {
@@ -409,29 +376,13 @@ const GuestDonate = () => {
             <div className="guest-donate-icon">
               <FaCoins />
             </div>
-            <h1 className="guest-donate-title">Guest Donation</h1>
+            <h1 className="guest-donate-title">Anonymous Donation</h1>
             <p className="guest-donate-subtitle">
-              <FaLock /> Secure & Anonymous — No account needed
+              <FaLock /> Secure & Anonymous — No personal details stored
             </p>
           </div>
 
           <form className="guest-form" onSubmit={handleSubmit} noValidate>
-            <div className="form-group">
-              <label className="form-label">
-                <FaUser /> Full Name
-              </label>
-              <input
-                type="text"
-                name="name"
-                className={`form-input ${errors.name ? 'error' : ''}`}
-                placeholder="John Doe"
-                value={formData.name}
-                onChange={handleChange}
-                disabled={loading}
-              />
-              {errors.name && <span className="error-message">{errors.name}</span>}
-            </div>
-
             <div className="form-group">
               <label className="form-label">
                 <FaEnvelope /> Email Address
@@ -440,11 +391,12 @@ const GuestDonate = () => {
                 type="email"
                 name="email"
                 className={`form-input ${errors.email ? 'error' : ''}`}
-                placeholder="john@example.com"
+                placeholder="your@email.com"
                 value={formData.email}
                 onChange={handleChange}
                 disabled={loading}
               />
+              <span className="email-note">Required by Paystack for payment receipt only. Not stored or shared.</span>
               {errors.email && <span className="error-message">{errors.email}</span>}
             </div>
 
@@ -478,21 +430,6 @@ const GuestDonate = () => {
               {errors.amount && <span className="error-message">{errors.amount}</span>}
             </div>
 
-            <div className="form-group">
-              <label className="form-label">
-                Phone Number <span className="optional-tag">(Optional)</span>
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                className="form-input"
-                placeholder="08012345678"
-                value={formData.phone}
-                onChange={handleChange}
-                disabled={loading}
-              />
-            </div>
-
             <div className="paystack-badge">
               <FaCreditCard /> Secured by <strong>Paystack</strong> — Card, Bank, USSD
             </div>
@@ -520,11 +457,6 @@ const GuestDonate = () => {
               )}
             </button>
           </form>
-
-          <div className="guest-footer">
-            Want to track your donations?{' '}
-            <Link to="/login">Log in</Link> or <Link to="/login">Create account</Link>
-          </div>
         </div>
       </div>
 
