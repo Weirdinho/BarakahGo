@@ -17,7 +17,7 @@ const PaymentVerify = () => {
   const [paymentData, setPaymentData] = useState(null);
   const [error, setError] = useState('');
 
-  const reference = searchParams.get('reference');
+  const reference = searchParams.get('reference') || searchParams.get('trxref');
   const API_URL = process.env.REACT_APP_API_URL || '';
 
   useEffect(() => {
@@ -29,7 +29,7 @@ const PaymentVerify = () => {
 
     const verifyPayment = async () => {
       try {
-        const response = await fetch(`${API_URL}/api/payments/verify/${reference}`);
+        const response = await fetch(`${API_URL}/payments/verify/${reference}`);
         const data = await response.json();
 
         if (data.status && data.data?.status === 'success') {
@@ -275,7 +275,7 @@ const PaymentVerify = () => {
                 <div className="receipt-box">
                   <div className="receipt-row">
                     <span className="receipt-label">Amount</span>
-                    <span className="receipt-value amount">{formatAmount(paymentData.amount)}</span>
+                    <span className="receipt-value amount">{formatAmount(paymentData.amount / 100)}</span>
                   </div>
                   <div className="receipt-row">
                     <span className="receipt-label">Reference</span>
@@ -283,7 +283,7 @@ const PaymentVerify = () => {
                   </div>
                   <div className="receipt-row">
                     <span className="receipt-label">Date</span>
-                    <span className="receipt-value">{formatDate(paymentData.paidAt)}</span>
+                    <span className="receipt-value">{formatDate(paymentData.paid_at)}</span>
                   </div>
                   <div className="receipt-row">
                     <span className="receipt-label">Channel</span>
@@ -293,9 +293,9 @@ const PaymentVerify = () => {
               )}
 
               <div className="verify-actions">
-                {paymentData?.receiptUrl && (
+                {paymentData?.receipt_url && (
                   <a 
-                    href={paymentData.receiptUrl} 
+                    href={paymentData.receipt_url} 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="verify-btn verify-btn-secondary"
@@ -325,7 +325,7 @@ const PaymentVerify = () => {
               </p>
 
               <div className="verify-actions">
-                <Link to="/donate/guest" className="verify-btn verify-btn-primary">
+                <Link to="/donateGateway/guest" className="verify-btn verify-btn-primary">
                   <FaRedo /> Try Again
                 </Link>
                 <Link to="/" className="verify-btn verify-btn-secondary">

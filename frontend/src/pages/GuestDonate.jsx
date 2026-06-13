@@ -70,6 +70,7 @@ const GuestDonate = () => {
         body: JSON.stringify({
           email: formData.email,
           amount: parseFloat(formData.amount) * 100,
+          callback_url: `${window.location.origin}/donate/verify`,
           metadata: {
             custom_fields: [
               {
