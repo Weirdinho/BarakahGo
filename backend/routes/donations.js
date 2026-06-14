@@ -7,6 +7,7 @@ const applicationController = require('../controllers/applicationController');
 // Donation routes (for donors)
 router.post('/initialize', auth, donationController.initializePayment);
 router.get('/verify/:reference', auth, donationController.verifyPayment);
+router.get('/', auth, donationController.getMyDonations); // ← ADD THIS
 
 // Application routes (for beneficiaries)
 router.post('/apply', auth, applicationController.applyForAid);

@@ -1,11 +1,28 @@
 const Donation = require('../models/Donation');
 const axios = require('axios');
 
+
+// @desc    Get logged-in user's donations
+// @route   GET /api/donations
+exports.getMyDonations = async (req, res) => {
+  try {
+    const donations = await Donation.find({ donor: req.user.id })
+      .sort({ createdAt: -1 });
+
+    res.json({
+      status: true,
+      data: donations
+    });
+  } catch (error) {
+    console.error('GET DONATIONS ERROR:', error);
+    res.status(500).json({ message: 'Failed to fetch donations' });
+  }
+};
 // @desc    Initialize payment
 // @route   POST /api/donations/initialize
 exports.initializePayment = async (req, res) => {
   try {
-    const { amount, category, message, isAnonymous } = req.body;
+    const { amount, category, message, isAnonymous, callback_url } = req.body;
 
     const donation = new Donation({
       donor: req.user.id,
@@ -22,8 +39,8 @@ exports.initializePayment = async (req, res) => {
       'https://api.paystack.co/transaction/initialize',
       {
         email: req.user.email,
-        amount: amount * 100, // Paystack expects kobo
-        callback_url: `${process.env.FRONTEND_URL}/donate/verify`,
+        amount: amount * 100,
+        callback_url: callback_url || `${process.env.FRONTEND_URL}/donate/verify`,
         metadata: {
           donation_id: donation._id.toString(),
           custom_fields: [

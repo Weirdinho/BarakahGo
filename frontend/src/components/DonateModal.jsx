@@ -90,7 +90,7 @@ const DonateModal = ({ onClose }) => {
         message,
         isAnonymous,
         beneficiariesCount: 1,
-        callback_url: `${window.location.origin}/donate/verify`
+        callback_url: window.location.origin + '/donate/verify',
       });
 
       if (response.data?.data?.authorization_url) {
