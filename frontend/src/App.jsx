@@ -21,8 +21,8 @@ import Press from './pages/Press';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
 import ResetPassword from './pages/ResetPassword';
-import Partnerships from './pages/Partnerships'; // ← NEW
-import FAQ from './pages/FAQ'; 
+import Partnerships from './pages/Partnerships';
+import FAQ from './pages/FAQ';
 import HowItWorksPage from './pages/HowItWorksPage';
 
 const AuthLoading = () => (
@@ -94,7 +94,7 @@ const AppContent = () => {
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/donate" element={<Donate />} />
-<Route path="/donate/verify" element={<PaymentVerify />} />
+        <Route path="/donate/verify" element={<PaymentVerify />} />
         <Route path="/login" element={<Login />} />
         <Route path="/portal" element={<RoleRedirect />} />
         
@@ -108,9 +108,9 @@ const AppContent = () => {
         <Route path="/donateGateway/guest" element={<GuestDonate />} />
 
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/partnerships" element={<Partnerships />} /> {/* ← NEW */}
-        <Route path="/faq" element={<FAQ />} /> {/* ← NEW */}
-         <Route path="/how-it-works" element={<HowItWorksPage />} />
+        <Route path="/partnerships" element={<Partnerships />} />
+        <Route path="/faq" element={<FAQ />} />
+        <Route path="/how-it-works" element={<HowItWorksPage />} />
         
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}>

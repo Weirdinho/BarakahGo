@@ -38,7 +38,7 @@ const DonateModal = ({ onClose }) => {
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [step, setStep] = useState(1); // 1 = amount, 2 = details
+  const [step, setStep] = useState(1);
 
   const handleAmountSelect = (amt) => {
     setAmount(amt);
@@ -89,7 +89,8 @@ const DonateModal = ({ onClose }) => {
         category,
         message,
         isAnonymous,
-        beneficiariesCount: 1
+        beneficiariesCount: 1,
+        callback_url: `${window.location.origin}/donate/verify`
       });
 
       if (response.data?.data?.authorization_url) {
@@ -543,7 +544,6 @@ const DonateModal = ({ onClose }) => {
 
       <div className="modal-overlay" onClick={onClose}>
         <div className="modal-container" onClick={e => e.stopPropagation()}>
-          {/* Header */}
           <div className="modal-header">
             <h2>Make a Donation</h2>
             <p>Choose an amount and category to give smart</p>
@@ -552,9 +552,7 @@ const DonateModal = ({ onClose }) => {
             </button>
           </div>
 
-          {/* Body */}
           <div className="modal-body">
-            {/* Step Indicator */}
             <div className="step-indicator">
               <div className={`step-dot ${step >= 1 ? 'active' : 'inactive'}`}>1</div>
               <div className={`step-line ${step >= 2 ? 'completed' : ''}`}></div>
@@ -624,7 +622,6 @@ const DonateModal = ({ onClose }) => {
 
             {step === 2 && (
               <>
-                {/* Selected Summary */}
                 <div className="selected-summary">
                   <div 
                     className="selected-icon" 
@@ -682,7 +679,6 @@ const DonateModal = ({ onClose }) => {
             )}
           </div>
 
-          {/* Footer for step 1 */}
           {step === 1 && (
             <div className="secure-badge">
               <FaLock /> Secured by Paystack — Card, Bank Transfer, USSD
