@@ -108,6 +108,9 @@ app.use((err, req, res, next) => {
   });
 });
 
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'build', 'index.html'));
+});
 // Use Render's PORT
 const PORT = process.env.PORT || 4000;
 
