@@ -22,8 +22,8 @@ const Dashboard = () => {
         api.get('/donations'),
         api.get('/vouchers')
       ]);
-      setDonations(donationsRes.data);
-      setVouchers(vouchersRes.data);
+      setDonations(donationsRes.data.data || []);
+      setVouchers(vouchersRes.data.data || []);
     } catch (err) {
       console.error(err);
     } finally {
@@ -105,11 +105,11 @@ const Dashboard = () => {
               donations.slice(0, 5).map(donation => (
                 <div className="donation-item" key={donation._id}>
                   <div className="donation-info">
-                    <h4>{donation.category.charAt(0).toUpperCase() + donation.category.slice(1)} Support</h4>
+                    <h4>{donation.category?.charAt(0).toUpperCase() + donation.category?.slice(1)} Support</h4>
                     <p>{new Date(donation.createdAt).toLocaleDateString()}</p>
                   </div>
                   <div style={{ textAlign: 'right' }}>
-                    <div className="donation-amount">₦{donation.amount.toLocaleString()}</div>
+                    <div className="donation-amount">₦{donation.amount?.toLocaleString()}</div>
                     <span style={{
                       fontSize: '0.75rem',
                       padding: '0.25rem 0.5rem',
