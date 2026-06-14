@@ -24,7 +24,7 @@ const donationSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'success', 'failed'],
-    default: 'pending'
+    default: 'success'
   },
   paystackReference: {
     type: String
