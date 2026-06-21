@@ -103,7 +103,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// @desc    Send password to user's email
+// @desc    Send password reset token to user's email
 // @route   POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res) => {
   const errors = validationResult(req);
@@ -118,61 +118,82 @@ exports.forgotPassword = async (req, res) => {
     
     // Security: Always return same message whether user exists or not
     if (!user) {
-      console.log(`⚠️ Password request for non-existent email: ${email}`);
+      console.log(`⚠️ Password reset request for non-existent email: ${email}`);
       return res.json({ 
-        message: 'If an account exists with this email, your password will be sent shortly.' 
+        message: 'If an account exists with this email, a password reset link will be sent shortly.' 
       });
     }
 
-    // Log for development
-    console.log('📨 Password requested for:', { 
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const resetTokenExpiry = Date.now() + 3600000; // 1 hour from now
+
+    // Save token to user (store hashed version for security)
+    user.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    user.resetPasswordExpiry = new Date(resetTokenExpiry);
+    await user.save();
+
+    // Build reset URL
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    console.log('📨 Password reset requested:', { 
       email, 
+      resetUrl,
       time: new Date().toISOString() 
     });
 
-    // If no SendGrid key, just log and return
+    // If no SendGrid key, just log and return (development mode)
     if (!process.env.SENDGRID_API_KEY) {
-      console.log('🔑 User password:', user.password);
+      console.log('🔑 Reset token (raw):', resetToken);
+      console.log('🔑 Reset token (hashed):', user.resetPasswordToken);
       return res.json({ 
-        message: 'If an account exists with this email, your password will be sent shortly.',
+        message: 'If an account exists with this email, a password reset link will be sent shortly.',
         ...(process.env.NODE_ENV === 'development' && {
-          password: user.password
+          resetUrl,
+          resetToken
         })
       });
     }
 
-    // Send email with password via SendGrid
+    // Send email with reset link via SendGrid
     const msg = {
       to: email,
-      from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
-      subject: 'Your Password - Amanah Charity Foundation',
+      from: process.env.EMAIL_FROM || 'hello@barakahgo.com',
+      subject: 'Password Reset - BarakahGo',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #1a5f2a; padding: 20px; text-align: center;">
-            <h1 style="color: #fff; margin: 0;">Amanah Charity Foundation</h1>
+            <h1 style="color: #fff; margin: 0;">BarakahGo</h1>
           </div>
           <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #2d3436;">Your Account Password</h2>
+            <h2 style="color: #2d3436;">Password Reset Request</h2>
             <p style="color: #636e72; line-height: 1.6;">
               Hello ${user.name || 'there'},
             </p>
             <p style="color: #636e72; line-height: 1.6;">
-              You recently requested your account password. Here it is:
+              You recently requested to reset your password. Click the button below to set a new password:
             </p>
-            <div style="background: #e8f5e9; border: 2px dashed #1a5f2a; padding: 20px; text-align: center; margin: 25px 0; border-radius: 10px;">
-              <p style="font-size: 1.4rem; font-weight: 700; color: #1a5f2a; margin: 0; letter-spacing: 2px;">
-                ${user.password}
-              </p>
+            <div style="text-align: center; margin: 25px 0;">
+              <a href="${resetUrl}" 
+                style="background: #1a5f2a; color: #fff; padding: 14px 32px; text-decoration: none; border-radius: 10px; font-weight: 600; display: inline-block; font-size: 1rem;">
+                Reset My Password
+              </a>
             </div>
             <p style="color: #636e72; line-height: 1.6;">
-              For security reasons, we recommend keeping this password safe and not sharing it with anyone.
+              Or copy and paste this link into your browser:
+            </p>
+            <p style="background: #e8f5e9; padding: 12px; border-radius: 8px; word-break: break-all; font-size: 0.85rem; color: #1a5f2a;">
+              ${resetUrl}
+            </p>
+            <p style="color: #636e72; line-height: 1.6; margin-top: 20px;">
+              This link will expire in <strong>1 hour</strong> for security reasons.
             </p>
             <p style="color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
-              ⚠️ If you didn't request this, please contact us immediately.
+              ⚠️ If you didn't request this, please ignore this email. Your password will remain unchanged.
             </p>
             <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
             <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
-              Amanah Charity Foundation<br>
+              BarakahGo<br>
               Making a difference, one donation at a time.
             </p>
           </div>
@@ -181,10 +202,10 @@ exports.forgotPassword = async (req, res) => {
     };
 
     await sgMail.send(msg);
-    console.log('✅ Password email sent via SendGrid to:', email);
+    console.log('✅ Reset email sent via SendGrid to:', email);
 
     res.json({ 
-      message: 'If an account exists with this email, your password will be sent shortly.'
+      message: 'If an account exists with this email, a password reset link will be sent shortly.'
     });
 
   } catch (error) {
@@ -194,8 +215,58 @@ exports.forgotPassword = async (req, res) => {
     }
     
     res.json({ 
-      message: 'If an account exists with this email, your password will be sent shortly.'
+      message: 'If an account exists with this email, a password reset link will be sent shortly.'
     });
+  }
+};
+
+// @desc    Reset password with token
+// @route   POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { token, password } = req.body;
+
+    if (!token || !password) {
+      return res.status(400).json({ message: 'Token and new password are required' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters' });
+    }
+
+    // Hash the token from URL to match stored hash
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+    // Find user with valid token
+    const user = await User.findOne({
+      resetPasswordToken: hashedToken,
+      resetPasswordExpiry: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid or expired reset token' });
+    }
+
+    // Update password and clear reset fields
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save();
+
+    console.log('✅ Password reset successful for:', user.email);
+
+    res.json({ 
+      message: 'Password reset successful. You can now log in with your new password.' 
+    });
+
+  } catch (error) {
+    console.error('❌ RESET PASSWORD ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
