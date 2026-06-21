@@ -35,7 +35,6 @@ const userSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // Password reset fields
   resetPasswordToken: {
     type: String
   },
@@ -46,12 +45,10 @@ const userSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Compare password method — plain text comparison
 userSchema.methods.comparePassword = async function(candidatePassword) {
   return this.password === candidatePassword;
 };
 
-// Remove password from JSON output
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;

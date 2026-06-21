@@ -4,12 +4,7 @@ const morgan = require('morgan');
 const dotenv = require('dotenv');
 const path = require('path');
 
-dotenv.config(); 
-
-// Crash handler
-process.on('uncaughtException', (err) => {
-  console.error('UNCAUGHT EXCEPTION:', err);
-});
+dotenv.config();
 
 const connectDB = require('./config/db');
 
@@ -22,99 +17,57 @@ const adminRoutes = require('./routes/admin');
 const contactRoutes = require('./routes/contact');
 const paymentRoutes = require('./routes/payments');
 
-// Connect DB
 connectDB();
 
 const app = express();
 
-// ======================
-// CORS - ALLOW ALL ORIGINS FOR NOW (FIX FOR RENDER)
-// ======================
+// CORS
 app.use(cors({
-  origin: true, // Reflects the request origin - allows all
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Handle preflight for ALL routes
 app.options('*', cors());
 
-// ======================
 // Middleware
-// ======================
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Debug middleware
-app.use((req, res, next) => {
-  console.log(`REQUEST: ${req.method} ${req.url} from ${req.headers.origin}`);
-  next();
-});
-
-// ======================
-// Test route
-// ======================
-app.get('/test', (req, res) => {
-  res.json({ message: 'server works' });
-});
-
-// ======================
 // API Routes
-// ======================
 app.use('/api/auth', authRoutes);
-// DEBUG: Log auth routes
-console.log('\n📋 AUTH ROUTES:');
-authRoutes.stack.forEach((layer) => {
-  if (layer.route) {
-    const methods = Object.keys(layer.route.methods).join(',').toUpperCase();
-    console.log(`   ${methods} /api/auth${layer.route.path}`);
-  }
-});
-console.log('');
 app.use('/api/donations', donationRoutes);
 app.use('/api/vouchers', voucherRoutes);
 app.use('/api/vendors', vendorRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/contact', contactRoutes);    // ✅ Use the imported contactRoutes
-app.use('/api/payments', paymentRoutes);   // ✅ External paymentRoutes
+app.use('/api/contact', contactRoutes);
+app.use('/api/payments', paymentRoutes);
 
-// ======================
 // Health check
-// ======================
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'OK',
-    timestamp: new Date().toISOString()
-  });
+  res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// ======================
-// 404 handler
-// ======================
-app.use((req, res) => {
-  res.status(404).json({
-    message: `Route ${req.method} ${req.url} not found`
-  });
-});
+// Serve React static files
+app.use(express.static(path.join(__dirname, 'build')));
 
-// ======================
-// Error handler
-// ======================
-app.use((err, req, res, next) => {
-  console.error('SERVER ERROR:', err);
-  res.status(err.status || 500).json({
-    message: err.message || 'Server Error'
-  });
-});
-
+// SPA fallback — serves index.html for all non-API routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'build', 'index.html'));
 });
-// Use Render's PORT
-const PORT = process.env.PORT || 4000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+// API 404 handler
+app.use('/api', (req, res) => {
+  res.status(404).json({ message: `API route ${req.method} ${req.url} not found` });
 });
+
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('SERVER ERROR:', err);
+  res.status(err.status || 500).json({ message: err.message || 'Server Error' });
+});
+
+const PORT = process.env.PORT || 4000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
