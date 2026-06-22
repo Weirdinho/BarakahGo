@@ -328,7 +328,7 @@ const Login = () => {
               ) : (
                 <>
                   <FaEnvelope size={16} />
-                  <span>Send My Password</span>
+                  <span>Send Reset Link</span>
                 </>
               )}
             </button>
