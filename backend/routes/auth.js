@@ -18,10 +18,19 @@ router.post('/login', [
   body('password').exists().withMessage('Password is required')
 ], authController.login);
 
-// @route   POST /api/auth/forgot-password (sends password to email)
+// @route   POST /api/auth/forgot-password (sends a reset link to the user's email)
 router.post('/forgot-password', [
   body('email').isEmail().withMessage('Valid email is required')
 ], authController.forgotPassword);
+
+// @route   POST /api/auth/verify-reset-token (checks a reset link is valid before showing the form)
+router.post('/verify-reset-token', authController.verifyResetToken);
+
+// @route   POST /api/auth/reset-password (sets a new password using a valid token)
+router.post('/reset-password', [
+  body('email').isEmail().withMessage('Valid email is required'),
+  body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters')
+], authController.resetPassword);
 
 // @route   GET /api/auth/me
 router.get('/me', auth, authController.getMe);

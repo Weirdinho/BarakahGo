@@ -18,6 +18,10 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
+// We never store the raw reset token in the DB — only its hash.
+// That way, even if the database is leaked, no one can use it to reset accounts.
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
@@ -103,7 +107,7 @@ exports.login = async (req, res) => {
   }
 };
 
-// @desc    Send password to user's email
+// @desc    Request a password reset link (sends an email with a one-time token)
 // @route   POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res) => {
   const errors = validationResult(req);
@@ -111,64 +115,68 @@ exports.forgotPassword = async (req, res) => {
     return res.status(400).json({ errors: errors.array() });
   }
 
+  // Always return this exact message whether or not the account exists,
+  // so requests can't be used to discover which emails are registered.
+  const genericMessage = 'If an account exists with this email, a password reset link has been sent.';
+
   try {
-    const { email } = req.body;
-
+    const email = req.body.email.toLowerCase().trim();
     const user = await User.findOne({ email });
-    
-    // Security: Always return same message whether user exists or not
+
     if (!user) {
-      console.log(`⚠️ Password request for non-existent email: ${email}`);
-      return res.json({ 
-        message: 'If an account exists with this email, your password will be sent shortly.' 
-      });
+      console.log(`⚠️ Password reset requested for non-existent email: ${email}`);
+      return res.json({ message: genericMessage });
     }
 
-    // Log for development
-    console.log('📨 Password requested for:', { 
-      email, 
-      time: new Date().toISOString() 
-    });
+    // Generate a random token. Keep the raw version only for the email link;
+    // store just its hash on the user document.
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    user.resetPasswordToken = hashToken(rawToken);
+    user.resetPasswordExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
+    await user.save();
 
-    // If no SendGrid key, just log and return
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
+    const resetUrl = `${clientUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+
+    console.log('📨 Password reset requested for:', { email, time: new Date().toISOString() });
+
+    // If no SendGrid key, just log the link so you can still test locally
     if (!process.env.SENDGRID_API_KEY) {
-      console.log('🔑 User password:', user.password);
-      return res.json({ 
-        message: 'If an account exists with this email, your password will be sent shortly.',
-        ...(process.env.NODE_ENV === 'development' && {
-          password: user.password
-        })
+      console.log('🔗 Reset link (dev only, no SENDGRID_API_KEY set):', resetUrl);
+      return res.json({
+        message: genericMessage,
+        ...(process.env.NODE_ENV === 'development' && { resetUrl })
       });
     }
 
-    // Send email with password via SendGrid
     const msg = {
       to: email,
       from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
-      subject: 'Your Password - Amanah Charity Foundation',
+      subject: 'Reset Your Password - Amanah Charity Foundation',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #1a5f2a; padding: 20px; text-align: center;">
             <h1 style="color: #fff; margin: 0;">Amanah Charity Foundation</h1>
           </div>
           <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #2d3436;">Your Account Password</h2>
+            <h2 style="color: #2d3436;">Reset Your Password</h2>
             <p style="color: #636e72; line-height: 1.6;">
               Hello ${user.name || 'there'},
             </p>
             <p style="color: #636e72; line-height: 1.6;">
-              You recently requested your account password. Here it is:
+              We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.
             </p>
-            <div style="background: #e8f5e9; border: 2px dashed #1a5f2a; padding: 20px; text-align: center; margin: 25px 0; border-radius: 10px;">
-              <p style="font-size: 1.4rem; font-weight: 700; color: #1a5f2a; margin: 0; letter-spacing: 2px;">
-                ${user.password}
-              </p>
+            <div style="text-align: center; margin: 30px 0;">
+              <a href="${resetUrl}" style="background: #1a5f2a; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block;">
+                Reset Password
+              </a>
             </div>
-            <p style="color: #636e72; line-height: 1.6;">
-              For security reasons, we recommend keeping this password safe and not sharing it with anyone.
+            <p style="color: #636e72; font-size: 0.85rem; line-height: 1.6;">
+              If the button doesn't work, copy and paste this link into your browser:<br>
+              <a href="${resetUrl}" style="color: #1a5f2a; word-break: break-all;">${resetUrl}</a>
             </p>
             <p style="color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
-              ⚠️ If you didn't request this, please contact us immediately.
+              ⚠️ If you didn't request this, you can safely ignore this email — your password will remain unchanged.
             </p>
             <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
             <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
@@ -181,21 +189,76 @@ exports.forgotPassword = async (req, res) => {
     };
 
     await sgMail.send(msg);
-    console.log('✅ Password email sent via SendGrid to:', email);
+    console.log('✅ Password reset email sent via SendGrid to:', email);
 
-    res.json({ 
-      message: 'If an account exists with this email, your password will be sent shortly.'
-    });
+    res.json({ message: genericMessage });
 
   } catch (error) {
     console.error('❌ FORGOT PASSWORD ERROR:', error.message);
     if (error.response) {
       console.error('❌ SendGrid response:', error.response.body);
     }
-    
-    res.json({ 
-      message: 'If an account exists with this email, your password will be sent shortly.'
+    // Still respond with the generic message so we don't leak info or break the UX
+    res.json({ message: genericMessage });
+  }
+};
+
+// @desc    Verify a reset token is valid and unexpired (used by the reset page on load)
+// @route   POST /api/auth/verify-reset-token
+exports.verifyResetToken = async (req, res) => {
+  try {
+    const { token, email } = req.body;
+    if (!token || !email) {
+      return res.status(400).json({ message: 'Invalid reset link.' });
+    }
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      resetPasswordToken: hashToken(token),
+      resetPasswordExpiry: { $gt: Date.now() }
     });
+
+    if (!user) {
+      return res.status(400).json({ message: 'This reset link is invalid or has expired.' });
+    }
+
+    res.json({ valid: true });
+  } catch (error) {
+    console.error('VERIFY RESET TOKEN ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Set a new password using a valid reset token
+// @route   POST /api/auth/reset-password
+exports.resetPassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { token, email, password } = req.body;
+
+    const user = await User.findOne({
+      email: email.toLowerCase().trim(),
+      resetPasswordToken: hashToken(token),
+      resetPasswordExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ message: 'This reset link is invalid or has expired. Please request a new one.' });
+    }
+
+    user.password = password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpiry = undefined;
+    await user.save();
+
+    res.json({ message: 'Your password has been reset successfully. You can now sign in.' });
+  } catch (error) {
+    console.error('RESET PASSWORD ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 

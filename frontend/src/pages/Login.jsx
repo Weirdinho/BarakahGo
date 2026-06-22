@@ -244,7 +244,7 @@ const Login = () => {
           </h2>
           <p style={{ color: '#636e72', fontSize: '0.95rem', lineHeight: '1.5' }}>
             {showForgotPassword
-              ? "Enter your email and we'll send your password to you"
+              ? "Enter your email and we'll send you a link to reset it"
               : isLogin ? 'Sign in to your account to continue' : 'Create your Amanah Charity Foundation account'}
           </p>
         </div>
