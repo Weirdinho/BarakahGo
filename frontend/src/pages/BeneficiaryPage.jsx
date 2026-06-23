@@ -8,10 +8,6 @@ import {
 import api from '../services/api';
 
 const categories = [
-  { id: 'zakat', label: 'Zakat' },
-  { id: 'sadaqah', label: 'Sadaqah' },
-  { id: 'sadaqah-jariyah', label: 'Sadaqah Jariyah' },
-  { id: 'waqf', label: 'Waqf Support' },
   { id: 'food', label: 'Food Aid' },
   { id: 'education', label: 'Education' },
   { id: 'healthcare', label: 'Healthcare' },

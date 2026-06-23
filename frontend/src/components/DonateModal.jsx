@@ -20,9 +20,7 @@ const categories = [
   { id: 'zakat', label: 'Zakat', icon: <FaHandHoldingUsd />, desc: 'Obligatory alms for the poor and needy', color: '#1a5f2a' },
   { id: 'sadaqah', label: 'Sadaqah', icon: <FaHeart />, desc: 'Voluntary charity for those in need', color: '#e76f51' },
   { id: 'waqf', label: 'Waqf', icon: <FaMosque />, desc: 'Endowment for lasting community benefit', color: '#2d8a3e' },
-  { id: 'food-aid', label: 'Food Aid', icon: <FaUtensils />, desc: 'Feed the hungry and provide meals', color: '#f4a261' },
-  { id: 'education', label: 'Education', icon: <FaGraduationCap />, desc: 'School fees, supplies, and scholarships', color: '#457b9d' },
-  { id: 'healthcare', label: 'Healthcare', icon: <FaMedkit />, desc: 'Medical treatment and hospital bills', color: '#e63946' },
+
   { id: 'general-fund', label: 'General Fund', icon: <FaHandHoldingHeart />, desc: 'Where needed most — urgent causes', color: '#6c5ce7' }
 ];
 

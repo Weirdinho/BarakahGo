@@ -10,11 +10,11 @@ const steps = [
   {
     number: '01',
     title: 'Choose & Donate',
-    description: 'Select a cause close to your heart — zakat, sadaqah, waqf, food aid, education, or healthcare. Enter your donation amount and pay securely via Paystack. Every donation is tracked from the moment it leaves your account.',
+    description: 'Select a cause close to your heart — zakat, sadaqah, waqf. Enter your donation amount and pay securely via Paystack. Every donation is tracked from the moment it leaves your account.',
     icon: <FaDonate />,
     color: '#1a5f2a',
     details: [
-      'Browse categories: Zakat, Sadaqah, Waqf, Food Aid, Education, Healthcare, General Fund',
+      'Browse categories: Zakat, Sadaqah, Waqf, General Fund',
       'Select preset amounts or enter a custom donation',
       'Pay with card, bank transfer, or USSD via Paystack',
       'Receive instant confirmation and tax-deductible receipt'

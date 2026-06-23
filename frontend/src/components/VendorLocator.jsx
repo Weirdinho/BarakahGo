@@ -12,9 +12,6 @@ const VendorLocator = () => {
     { id: 'zakat', label: 'Zakat' },
     { id: 'sadaqah', label: 'Sadaqah' },
     { id: 'waqf', label: 'Waqf' },
-    { id: 'food-aid', label: 'Food Aid' },
-    { id: 'education', label: 'Education' },
-    { id: 'healthcare', label: 'Healthcare' },
     { id: 'general-fund', label: 'General Fund' }
   ];
 

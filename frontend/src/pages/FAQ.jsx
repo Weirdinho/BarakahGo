@@ -7,7 +7,7 @@ const faqs = [
   },
   {
     question: 'How do I make a donation?',
-    answer: 'Simply create an account, click "Donate", choose a category (zakat, sadaqah, waqf, food aid, education, or healthcare), select an amount, and pay securely via Paystack. Your donation is instantly converted to e-vouchers.'
+    answer: 'Simply create an account, click "Donate", choose a category (zakat, sadaqah, waqf, General Fund), select an amount, and pay securely via Paystack. Your donation is instantly converted to e-vouchers.'
   },
   {
     question: 'What is the difference between Zakat, Sadaqah, and Waqf?',

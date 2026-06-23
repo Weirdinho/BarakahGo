@@ -41,24 +41,6 @@ const categories = [
     desc: 'Endowment for lasting community benefit — perpetual charity' 
   },
   { 
-    id: 'food', 
-    label: 'Food Aid', 
-    icon: <FaUtensils />, 
-    desc: 'Feed the hungry and provide meals to struggling families' 
-  },
-  { 
-    id: 'education', 
-    label: 'Education', 
-    icon: <FaGraduationCap />, 
-    desc: 'School fees, supplies, and scholarships for orphans and needy students' 
-  },
-  { 
-    id: 'healthcare', 
-    label: 'Healthcare', 
-    icon: <FaMedkit />, 
-    desc: 'Medical treatment, medicines, and hospital bills for the sick' 
-  },
-  { 
     id: 'general', 
     label: 'General Fund', 
     icon: <FaHandHoldingHeart />, 
