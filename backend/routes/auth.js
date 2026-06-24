@@ -35,4 +35,16 @@ router.post('/reset-password', [
 // @route   GET /api/auth/me
 router.get('/me', auth, authController.getMe);
 
+// @route   PUT /api/auth/profile (update your own name/email/phone/company)
+router.put('/profile', auth, [
+  body('name').optional().trim().notEmpty().withMessage('Name cannot be empty'),
+  body('email').optional().isEmail().withMessage('Valid email is required'),
+  body('phone').optional({ checkFalsy: true }).matches(/^\+?[\d\s-]{8,}$/).withMessage('Please enter a valid phone number')
+], authController.updateProfile);
+
+// @route   DELETE /api/auth/profile (permanently delete your own account)
+router.delete('/profile', auth, [
+  body('password').notEmpty().withMessage('Password is required to delete your account')
+], authController.deleteAccount);
+
 module.exports = router;

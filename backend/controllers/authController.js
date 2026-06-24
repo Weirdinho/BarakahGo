@@ -276,3 +276,77 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+// @desc    Update the logged-in user's own profile (name, email, phone, company)
+// @route   PUT /api/auth/profile
+exports.updateProfile = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const userId = req.user._id || req.user.id;
+    const { name, email, phone, companyName } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // If the email is changing, make sure no other account already uses it
+    if (email !== undefined) {
+      const normalizedEmail = email.toLowerCase().trim();
+      if (normalizedEmail !== user.email) {
+        const emailTaken = await User.findOne({ email: normalizedEmail, _id: { $ne: userId } });
+        if (emailTaken) {
+          return res.status(400).json({ message: 'That email is already in use by another account' });
+        }
+        user.email = normalizedEmail;
+      }
+    }
+
+    if (name !== undefined) user.name = name;
+    if (phone !== undefined) user.phone = phone;
+    if (companyName !== undefined) user.companyName = companyName;
+
+    await user.save();
+
+    res.json({ message: 'Profile updated successfully', user });
+  } catch (error) {
+    console.error('UPDATE PROFILE ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Permanently delete the logged-in user's own account
+// @route   DELETE /api/auth/profile
+exports.deleteAccount = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const userId = req.user._id || req.user.id;
+    const { password } = req.body;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Incorrect password. Account was not deleted.' });
+    }
+
+    await User.findByIdAndDelete(userId);
+    console.log(`🗑️ Account deleted: ${user.email} (${userId})`);
+
+    res.json({ message: 'Your account has been permanently deleted.' });
+  } catch (error) {
+    console.error('DELETE ACCOUNT ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

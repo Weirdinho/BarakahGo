@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   FaBars,
   FaTimes,
   FaUser,
+  FaUserEdit,
+  FaChevronDown,
   FaSignOutAlt,
   FaHome,
   FaInfoCircle,
@@ -18,6 +20,8 @@ const Navbar = () => {
   const location = useLocation();
 
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
 
   const handleLogout = () => {
     logout();
@@ -25,11 +29,28 @@ const Navbar = () => {
   };
 
   const closeMenu = () => setMobileOpen(false);
+  const closeProfileMenu = () => setProfileMenuOpen(false);
+
+  // Close the profile dropdown when clicking anywhere outside of it
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(e.target)) {
+        setProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Close the profile dropdown whenever the route changes
+  useEffect(() => {
+    setProfileMenuOpen(false);
+  }, [location.pathname]);
 
   // Get the dashboard path based on user role
   const getDashboardPath = () => {
     if (!user) return '/login';
-    
+
     switch (user.role) {
       case 'admin':
         return '/admin';
@@ -207,26 +228,6 @@ const Navbar = () => {
           transform: rotate(90deg);
         }
 
-        .user-name {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 0.85rem;
-          color: #2d3436;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          text-decoration: none;
-        }
-
-        .user-name:hover {
-          color: #1a5f2a;
-        }
-
-        .user-name.active {
-          color: #1a5f2a;
-          font-weight: 700;
-        }
-
         .logout-btn {
           background: none;
           border: none;
@@ -239,11 +240,114 @@ const Navbar = () => {
           font-size: 0.95rem;
           padding: 0;
           transition: all 0.3s ease;
+          width: 100%;
+          text-align: left;
         }
 
         .logout-btn:hover {
           color: #c0392b;
           transform: translateX(2px);
+        }
+
+        /* =========================
+           PROFILE DROPDOWN
+        ========================== */
+        .profile-menu-wrapper {
+          position: relative;
+        }
+
+        .profile-trigger {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          background: none;
+          border: none;
+          cursor: pointer;
+          font-size: 0.85rem;
+          font-family: inherit;
+          color: #2d3436;
+          padding: 0;
+          transition: color 0.2s ease;
+        }
+
+        .profile-trigger:hover,
+        .profile-trigger.active {
+          color: #1a5f2a;
+          font-weight: 700;
+        }
+
+        .profile-trigger .chevron {
+          font-size: 0.7rem;
+          transition: transform 0.25s ease;
+        }
+
+        .profile-trigger .chevron.open {
+          transform: rotate(180deg);
+        }
+
+        .profile-dropdown {
+          position: absolute;
+          top: calc(100% + 14px);
+          right: 0;
+          background: #fff;
+          border-radius: 14px;
+          box-shadow: 0 12px 35px rgba(0, 0, 0, 0.15);
+          border: 1px solid #f1f5f9;
+          min-width: 210px;
+          list-style: none;
+          margin: 0;
+          padding: 0.5rem;
+          opacity: 0;
+          transform: translateY(-8px);
+          pointer-events: none;
+          transition: all 0.2s ease;
+        }
+
+        .profile-dropdown.open {
+          opacity: 1;
+          transform: translateY(0);
+          pointer-events: all;
+        }
+
+        .profile-dropdown li {
+          margin: 0;
+          padding: 0;
+        }
+
+        .profile-dropdown a,
+        .profile-dropdown .logout-btn {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          padding: 0.7rem 0.8rem;
+          border-radius: 9px;
+          font-size: 0.9rem;
+          font-weight: 500;
+        }
+
+        .profile-dropdown a::after {
+          display: none;
+        }
+
+        .profile-dropdown a:hover,
+        .profile-dropdown .logout-btn:hover {
+          background: rgba(26, 95, 42, 0.08);
+          transform: none;
+        }
+
+        .profile-dropdown a.active {
+          background: rgba(26, 95, 42, 0.1);
+          font-weight: 700;
+        }
+
+        .profile-dropdown .logout-btn:hover {
+          background: rgba(231, 111, 81, 0.1);
+        }
+
+        .profile-divider {
+          height: 1px;
+          background: #f1f5f9;
+          margin: 0.35rem 0.4rem;
         }
 
         /* =========================
@@ -353,7 +457,11 @@ const Navbar = () => {
             background: #0f3d1a;
           }
 
-          .user-name {
+          /* On mobile, the dropdown becomes an inline expanding section
+             instead of a floating box, so it fits naturally in the slide-out panel */
+          .profile-trigger {
+            width: 100%;
+            justify-content: space-between;
             padding: 1rem 0;
             font-size: 1rem;
             border-bottom: 1px solid #f1f5f9;
@@ -361,20 +469,40 @@ const Navbar = () => {
             font-weight: 600;
           }
 
-          .user-name.active {
-            background: rgba(26, 95, 42, 0.08);
-            border-radius: 8px;
-            padding-left: 1rem;
-            padding-right: 1rem;
-            margin-left: -1rem;
-            margin-right: -1rem;
+          .profile-dropdown {
+            position: static;
+            box-shadow: none;
+            border: none;
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            min-width: 0;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 1;
+            transform: none;
+            transition: max-height 0.3s ease;
           }
 
-          .logout-btn {
-            padding: 1rem 0;
-            font-size: 1.1rem;
-            width: 100%;
-            justify-content: flex-start;
+          .profile-dropdown.open {
+            max-height: 260px;
+          }
+
+          .profile-dropdown a,
+          .profile-dropdown .logout-btn {
+            padding: 0.85rem 0 0.85rem 1rem;
+            border-bottom: 1px solid #f1f5f9;
+            border-radius: 0;
+            font-size: 1rem;
+          }
+
+          .profile-dropdown a:hover,
+          .profile-dropdown .logout-btn:hover {
+            background: rgba(26, 95, 42, 0.05);
+          }
+
+          .profile-divider {
+            display: none;
           }
         }
 
@@ -475,31 +603,56 @@ const Navbar = () => {
               </li>
             )}
 
-            {/* User Section - Name is now clickable */}
+            {/* User Section - Name now opens a dropdown */}
             {user ? (
-              <>
-                <li>
-                  <Link 
-                    to={getDashboardPath()} 
-                    className={`user-name ${isActive(getDashboardPath()) ? 'active' : ''}`}
-                    onClick={closeMenu}
-                  >
+              <li className="profile-menu-wrapper" ref={profileMenuRef}>
+                <button
+                  type="button"
+                  className={`profile-trigger ${(isOnDashboard() || isActive('/edit-profile')) ? 'active' : ''}`}
+                  onClick={() => setProfileMenuOpen((prev) => !prev)}
+                  aria-expanded={profileMenuOpen}
+                >
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <FaUser /> {user.name}
-                  </Link>
-                </li>
+                  </span>
+                  <FaChevronDown className={`chevron ${profileMenuOpen ? 'open' : ''}`} />
+                </button>
 
-                <li>
-                  <button
-                    onClick={() => {
-                      handleLogout();
-                      closeMenu();
-                    }}
-                    className="logout-btn"
-                  >
-                    <FaSignOutAlt /> Logout
-                  </button>
-                </li>
-              </>
+                <ul className={`profile-dropdown ${profileMenuOpen ? 'open' : ''}`}>
+                  <li>
+                    <Link
+                      to={getDashboardPath()}
+                      onClick={() => { closeProfileMenu(); closeMenu(); }}
+                      className={isActive(getDashboardPath()) ? 'active' : ''}
+                    >
+                      <FaHome /> Dashboard
+                    </Link>
+                  </li>
+                  <li>
+                    <Link
+                      to="/edit-profile"
+                      onClick={() => { closeProfileMenu(); closeMenu(); }}
+                      className={isActive('/edit-profile') ? 'active' : ''}
+                    >
+                      <FaUserEdit /> Edit Profile
+                    </Link>
+                  </li>
+                  <li className="profile-divider" />
+                  <li>
+                    <button
+                      type="button"
+                      className="logout-btn"
+                      onClick={() => {
+                        handleLogout();
+                        closeProfileMenu();
+                        closeMenu();
+                      }}
+                    >
+                      <FaSignOutAlt /> Logout
+                    </button>
+                  </li>
+                </ul>
+              </li>
             ) : (
               <li>
                 <Link
