@@ -2,20 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  FaUser,
-  FaEnvelope,
-  FaPhone,
-  FaBuilding,
-  FaEdit,
-  FaSave,
-  FaTimes,
-  FaTrashAlt,
-  FaExclamationTriangle,
-  FaCheckCircle,
-  FaSpinner,
-  FaLock,
-  FaEye,
-  FaEyeSlash
+  FaUser, FaEnvelope, FaPhone, FaBuilding,
+  FaEdit, FaSave, FaTimes, FaTrashAlt,
+  FaExclamationTriangle, FaCheckCircle, FaSpinner,
+  FaLock, FaEye, FaEyeSlash
 } from 'react-icons/fa';
 
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
@@ -24,194 +14,118 @@ const EditProfile = () => {
   const { user, loading: authLoading, setUser } = useAuth();
   const navigate = useNavigate();
 
-  // ─── Form States ───
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    company: ''
-  });
+  const [formData, setFormData] = useState({ name: '', email: '', phone: '', companyName: '' });
   const [originalData, setOriginalData] = useState({});
-  
-  // ─── Password Change States ───
-  const [showPasswordSection, setShowPasswordSection] = useState(false);
-  const [passwordData, setPasswordData] = useState({
-    currentPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
-  const [showPasswords, setShowPasswords] = useState({
-    current: false,
-    new: false,
-    confirm: false
-  });
 
-  // ─── UI States ───
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [passwordData, setPasswordData] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [showPasswords, setShowPasswords] = useState({ current: false, new: false, confirm: false });
+
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
   const [errors, setErrors] = useState({});
   const [passwordErrors, setPasswordErrors] = useState({});
-  
-  // ─── Delete Account Modal ───
+
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
   const [deleting, setDeleting] = useState(false);
 
-  // ─── Load user data ───
   useEffect(() => {
     if (user) {
       const data = {
         name: user.name || '',
         email: user.email || '',
         phone: user.phone || '',
-        company: user.company || ''
+        companyName: user.companyName || ''
       };
       setFormData(data);
       setOriginalData(data);
     }
   }, [user]);
 
-  // Redirect if not logged in
   useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-    }
+    if (!authLoading && !user) navigate('/login');
   }, [authLoading, user, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
+    if (errors[name]) setErrors(prev => { const n = { ...prev }; delete n[name]; return n; });
   };
 
   const handlePasswordChange = (e) => {
     const { name, value } = e.target;
     setPasswordData(prev => ({ ...prev, [name]: value }));
-    if (passwordErrors[name]) {
-      setPasswordErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
+    if (passwordErrors[name]) setPasswordErrors(prev => { const n = { ...prev }; delete n[name]; return n; });
   };
 
   const validateProfile = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Name is required';
-    if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email';
-    }
-    if (formData.phone && !/^\+?[\d\s-]{8,}$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number';
-    }
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = 'Invalid email';
+    if (formData.phone && !/^\+?[\d\s-]{8,}$/.test(formData.phone)) newErrors.phone = 'Invalid phone number';
     return newErrors;
   };
 
   const validatePassword = () => {
     const newErrors = {};
-    if (!passwordData.currentPassword) newErrors.currentPassword = 'Current password is required';
-    if (!passwordData.newPassword) {
-      newErrors.newPassword = 'New password is required';
-    } else if (passwordData.newPassword.length < 6) {
-      newErrors.newPassword = 'Password must be at least 6 characters';
-    }
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
+    if (!passwordData.currentPassword) newErrors.currentPassword = 'Required';
+    if (!passwordData.newPassword) newErrors.newPassword = 'Required';
+    else if (passwordData.newPassword.length < 6) newErrors.newPassword = 'Min 6 characters';
+    if (passwordData.newPassword !== passwordData.confirmPassword) newErrors.confirmPassword = 'Passwords do not match';
     return newErrors;
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
     const validationErrors = validateProfile();
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
+    if (Object.keys(validationErrors).length > 0) { setErrors(validationErrors); return; }
 
-    setSaving(true);
-    setMessage({ type: '', text: '' });
-
+    setSaving(true); setMessage({ type: '', text: '' });
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/auth/profile`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(formData)
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to update profile');
-      }
+      if (!res.ok) throw new Error(data.message || 'Failed to update');
 
       setUser(prev => ({ ...prev, ...data.user }));
       setOriginalData(formData);
       setIsEditing(false);
-      setMessage({ type: 'success', text: 'Profile updated successfully!' });
+      setMessage({ type: 'success', text: 'Profile updated!' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } catch (err) {
-      setMessage({ type: 'error', text: err.message });
-    } finally {
-      setSaving(false);
-    }
+    } catch (err) { setMessage({ type: 'error', text: err.message }); }
+    finally { setSaving(false); }
   };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
     const validationErrors = validatePassword();
-    if (Object.keys(validationErrors).length > 0) {
-      setPasswordErrors(validationErrors);
-      return;
-    }
+    if (Object.keys(validationErrors).length > 0) { setPasswordErrors(validationErrors); return; }
 
-    setChangingPassword(true);
-    setMessage({ type: '', text: '' });
-
+    setChangingPassword(true); setMessage({ type: '', text: '' });
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/auth/change-password`, {
         method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          currentPassword: passwordData.currentPassword,
-          newPassword: passwordData.newPassword
-        })
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify({ currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword })
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to change password');
-      }
+      if (!res.ok) throw new Error(data.message || 'Failed to change password');
 
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowPasswordSection(false);
-      setMessage({ type: 'success', text: 'Password changed successfully!' });
+      setMessage({ type: 'success', text: 'Password changed!' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } catch (err) {
-      setMessage({ type: 'error', text: err.message });
-    } finally {
-      setChangingPassword(false);
-    }
+    } catch (err) { setMessage({ type: 'error', text: err.message }); }
+    finally { setChangingPassword(false); }
   };
 
   const handleCancel = () => {
@@ -227,470 +141,91 @@ const EditProfile = () => {
   const handleDeleteAccount = async (e) => {
     e.preventDefault();
     if (!deletePassword) return;
-
     setDeleting(true);
     try {
       const token = localStorage.getItem('token');
       const res = await fetch(`${API_URL}/auth/profile`, {
         method: 'DELETE',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ password: deletePassword })
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.message || 'Failed to delete account');
-      }
+      if (!res.ok) throw new Error(data.message || 'Failed to delete');
 
       localStorage.removeItem('token');
       setUser(null);
       navigate('/');
-    } catch (err) {
-      setMessage({ type: 'error', text: err.message });
-      setDeleting(false);
-    }
+    } catch (err) { setMessage({ type: 'error', text: err.message }); setDeleting(false); }
   };
 
-  if (authLoading) {
-    return (
-      <div className="edit-profile-page">
-        <div className="loading-container">
-          <FaSpinner className="spinner" />
-          <p>Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
+  if (authLoading) return (
+    <div className="edit-profile-page">
+      <div className="loading-container"><FaSpinner className="spinner" /><p>Loading...</p></div>
+    </div>
+  );
   if (!user) return null;
 
-  const roleLabels = {
-    admin: 'Administrator',
-    donor: 'Donor',
-    corporate: 'Corporate Partner',
-    vendor: 'Vendor',
-    beneficiary: 'Beneficiary'
-  };
+  const roleLabels = { admin: 'Administrator', donor: 'Donor', corporate: 'Corporate Partner', vendor: 'Vendor', beneficiary: 'Beneficiary' };
 
   return (
     <>
       <style>{`
-        .edit-profile-page {
-          min-height: 100vh;
-          background: #f8f9fa;
-          padding: 100px 1.5rem 3rem;
-        }
-
-        .profile-container {
-          max-width: 700px;
-          margin: 0 auto;
-        }
-
-        .profile-header {
-          text-align: center;
-          margin-bottom: 2rem;
-        }
-
-        .profile-header h1 {
-          color: #1a5f2a;
-          font-size: 2rem;
-          margin-bottom: 0.5rem;
-        }
-
-        .profile-header p {
-          color: #636e72;
-          font-size: 1rem;
-        }
-
-        .profile-card {
-          background: white;
-          border-radius: 16px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-          overflow: hidden;
-          margin-bottom: 1.5rem;
-        }
-
-        .profile-avatar-section {
-          background: linear-gradient(135deg, #1a5f2a 0%, #2d8a3e 100%);
-          padding: 2.5rem;
-          text-align: center;
-          color: white;
-        }
-
-        .avatar-circle {
-          width: 90px;
-          height: 90px;
-          background: rgba(255,255,255,0.2);
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin: 0 auto 1rem;
-          font-size: 2.5rem;
-          border: 3px solid rgba(255,255,255,0.3);
-        }
-
-        .avatar-circle span {
-          font-weight: 700;
-          font-size: 2rem;
-        }
-
-        .user-name {
-          font-size: 1.4rem;
-          font-weight: 700;
-          margin-bottom: 0.25rem;
-        }
-
-        .user-role {
-          display: inline-block;
-          background: rgba(255,255,255,0.2);
-          padding: 0.3rem 1rem;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 500;
-        }
-
-        .profile-body {
-          padding: 2rem;
-        }
-
-        .section-title {
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          font-size: 1.1rem;
-          font-weight: 700;
-          color: #2d3436;
-          margin-bottom: 1.5rem;
-          padding-bottom: 0.75rem;
-          border-bottom: 2px solid #f1f5f9;
-        }
-
-        .form-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 1.25rem;
-        }
-
-        .form-group {
-          display: flex;
-          flex-direction: column;
-          gap: 0.4rem;
-        }
-
-        .form-group.full-width {
-          grid-column: 1 / -1;
-        }
-
-        .form-label {
-          font-size: 0.85rem;
-          font-weight: 600;
-          color: #636e72;
-          display: flex;
-          align-items: center;
-          gap: 0.4rem;
-        }
-
-        .form-input {
-          padding: 0.85rem 1rem;
-          border: 2px solid #e9ecef;
-          border-radius: 10px;
-          font-size: 0.95rem;
-          font-family: inherit;
-          transition: all 0.2s ease;
-          background: #fff;
-          width: 100%;
-          box-sizing: border-box;
-        }
-
-        .form-input:focus {
-          outline: none;
-          border-color: #1a5f2a;
-          box-shadow: 0 0 0 3px rgba(26, 95, 42, 0.1);
-        }
-
-        .form-input:disabled,
-        .form-input.readonly {
-          background: #f8f9fa;
-          color: #636e72;
-          cursor: not-allowed;
-        }
-
-        .form-input.error {
-          border-color: #e76f51;
-        }
-
-        .error-text {
-          color: #e76f51;
-          font-size: 0.8rem;
-          margin-top: 0.2rem;
-        }
-
-        .info-value {
-          padding: 0.85rem 1rem;
-          background: #f8f9fa;
-          border-radius: 10px;
-          font-size: 0.95rem;
-          color: #2d3436;
-          border: 2px solid transparent;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-          min-height: 48px;
-          box-sizing: border-box;
-        }
-
-        .info-value .empty {
-          color: #b2bec3;
-          font-style: italic;
-        }
-
-        .password-input-wrapper {
-          position: relative;
-        }
-
-        .password-toggle {
-          position: absolute;
-          right: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          background: none;
-          border: none;
-          color: #636e72;
-          cursor: pointer;
-          font-size: 1rem;
-          padding: 0.25rem;
-        }
-
-        .password-toggle:hover {
-          color: #1a5f2a;
-        }
-
-        .action-buttons {
-          display: flex;
-          gap: 0.75rem;
-          margin-top: 1.5rem;
-          padding-top: 1.5rem;
-          border-top: 2px solid #f1f5f9;
-        }
-
-        .btn {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 0.5rem;
-          padding: 0.85rem 1.5rem;
-          border-radius: 10px;
-          font-size: 0.95rem;
-          font-weight: 600;
-          font-family: inherit;
-          cursor: pointer;
-          border: none;
-          transition: all 0.2s ease;
-        }
-
-        .btn-primary {
-          background: #1a5f2a;
-          color: white;
-        }
-
-        .btn-primary:hover:not(:disabled) {
-          background: #0f3d1a;
-          transform: translateY(-1px);
-        }
-
-        .btn-secondary {
-          background: #f1f5f9;
-          color: #2d3436;
-        }
-
-        .btn-secondary:hover:not(:disabled) {
-          background: #e9ecef;
-        }
-
-        .btn-outline {
-          background: transparent;
-          color: #1a5f2a;
-          border: 2px solid #1a5f2a;
-        }
-
-        .btn-outline:hover:not(:disabled) {
-          background: #1a5f2a;
-          color: white;
-        }
-
-        .btn-danger {
-          background: transparent;
-          color: #e76f51;
-          border: 2px solid #e76f51;
-        }
-
-        .btn-danger:hover:not(:disabled) {
-          background: #e76f51;
-          color: white;
-        }
-
-        .btn:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-
-        .alert {
-          display: flex;
-          align-items: center;
-          gap: 0.75rem;
-          padding: 1rem 1.25rem;
-          border-radius: 10px;
-          margin-bottom: 1.5rem;
-          font-size: 0.95rem;
-          font-weight: 500;
-        }
-
-        .alert-success {
-          background: #d4edda;
-          color: #155724;
-          border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-          background: #f8d7da;
-          color: #721c24;
-          border: 1px solid #f5c6cb;
-        }
-
-        .password-section {
-          margin-top: 1.5rem;
-          padding-top: 1.5rem;
-          border-top: 2px solid #f1f5f9;
-        }
-
-        .danger-zone {
-          margin-top: 2rem;
-          padding: 1.5rem;
-          border: 2px solid #f1f5f9;
-          border-radius: 12px;
-        }
-
-        .danger-zone-title {
-          color: #e76f51;
-          font-weight: 700;
-          font-size: 1rem;
-          margin-bottom: 0.5rem;
-          display: flex;
-          align-items: center;
-          gap: 0.5rem;
-        }
-
-        .danger-zone p {
-          color: #636e72;
-          font-size: 0.9rem;
-          margin-bottom: 1rem;
-        }
-
-        /* Modal */
-        .modal-overlay {
-          position: fixed;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: rgba(0,0,0,0.5);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          z-index: 2000;
-          padding: 1rem;
-          backdrop-filter: blur(4px);
-        }
-
-        .modal-content {
-          background: white;
-          border-radius: 16px;
-          max-width: 450px;
-          width: 100%;
-          padding: 2rem;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-        }
-
-        .modal-header {
-          text-align: center;
-          margin-bottom: 1.5rem;
-        }
-
-        .modal-icon {
-          width: 60px;
-          height: 60px;
-          background: #fff3f3;
-          color: #e76f51;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 1.5rem;
-          margin: 0 auto 1rem;
-        }
-
-        .modal-header h3 {
-          color: #2d3436;
-          margin-bottom: 0.5rem;
-        }
-
-        .modal-header p {
-          color: #636e72;
-          font-size: 0.9rem;
-        }
-
-        .modal-actions {
-          display: flex;
-          gap: 0.75rem;
-          margin-top: 1.5rem;
-        }
-
-        .modal-actions .btn {
-          flex: 1;
-        }
-
-        .loading-container {
-          min-height: 60vh;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          gap: 1rem;
-          color: #636e72;
-        }
-
-        .spinner {
-          animation: spin 1s linear infinite;
-          font-size: 2rem;
-          color: #1a5f2a;
-        }
-
-        @keyframes spin {
-          to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 600px) {
-          .form-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .profile-body {
-            padding: 1.5rem;
-          }
-          
-          .action-buttons {
-            flex-direction: column;
-          }
-          
-          .btn {
-            width: 100%;
-          }
-        }
+        .edit-profile-page { min-height: 100vh; background: #f8f9fa; padding: 100px 1.5rem 3rem; }
+        .profile-container { max-width: 700px; margin: 0 auto; }
+        .profile-header { text-align: center; margin-bottom: 2rem; }
+        .profile-header h1 { color: #1a5f2a; font-size: 2rem; margin-bottom: 0.5rem; }
+        .profile-header p { color: #636e72; font-size: 1rem; }
+        .profile-card { background: white; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); overflow: hidden; margin-bottom: 1.5rem; }
+        .profile-avatar-section { background: linear-gradient(135deg, #1a5f2a 0%, #2d8a3e 100%); padding: 2.5rem; text-align: center; color: white; }
+        .avatar-circle { width: 90px; height: 90px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 2.5rem; border: 3px solid rgba(255,255,255,0.3); }
+        .avatar-circle span { font-weight: 700; font-size: 2rem; }
+        .user-name { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.25rem; }
+        .user-role { display: inline-block; background: rgba(255,255,255,0.2); padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 500; }
+        .profile-body { padding: 2rem; }
+        .section-title { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; font-weight: 700; color: #2d3436; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 2px solid #f1f5f9; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+        .form-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .form-group.full-width { grid-column: 1 / -1; }
+        .form-label { font-size: 0.85rem; font-weight: 600; color: #636e72; display: flex; align-items: center; gap: 0.4rem; }
+        .form-input { padding: 0.85rem 1rem; border: 2px solid #e9ecef; border-radius: 10px; font-size: 0.95rem; font-family: inherit; transition: all 0.2s ease; background: #fff; width: 100%; box-sizing: border-box; }
+        .form-input:focus { outline: none; border-color: #1a5f2a; box-shadow: 0 0 0 3px rgba(26,95,42,0.1); }
+        .form-input.error { border-color: #e76f51; }
+        .error-text { color: #e76f51; font-size: 0.8rem; }
+        .info-value { padding: 0.85rem 1rem; background: #f8f9fa; border-radius: 10px; font-size: 0.95rem; color: #2d3436; display: flex; align-items: center; gap: 0.5rem; min-height: 48px; box-sizing: border-box; }
+        .info-value .empty { color: #b2bec3; font-style: italic; }
+        .password-input-wrapper { position: relative; }
+        .password-toggle { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #636e72; cursor: pointer; font-size: 1rem; padding: 0.25rem; }
+        .password-toggle:hover { color: #1a5f2a; }
+        .action-buttons { display: flex; gap: 0.75rem; margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #f1f5f9; flex-wrap: wrap; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.85rem 1.5rem; border-radius: 10px; font-size: 0.95rem; font-weight: 600; font-family: inherit; cursor: pointer; border: none; transition: all 0.2s ease; }
+        .btn-primary { background: #1a5f2a; color: white; }
+        .btn-primary:hover:not(:disabled) { background: #0f3d1a; transform: translateY(-1px); }
+        .btn-secondary { background: #f1f5f9; color: #2d3436; }
+        .btn-secondary:hover:not(:disabled) { background: #e9ecef; }
+        .btn-outline { background: transparent; color: #1a5f2a; border: 2px solid #1a5f2a; }
+        .btn-outline:hover:not(:disabled) { background: #1a5f2a; color: white; }
+        .btn-danger { background: transparent; color: #e76f51; border: 2px solid #e76f51; }
+        .btn-danger:hover:not(:disabled) { background: #e76f51; color: white; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .alert { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; font-size: 0.95rem; font-weight: 500; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .password-section { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid #f1f5f9; }
+        .danger-zone { padding: 1.5rem; }
+        .danger-zone-title { color: #e76f51; font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+        .danger-zone p { color: #636e72; font-size: 0.9rem; margin-bottom: 1rem; }
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 1rem; backdrop-filter: blur(4px); }
+        .modal-content { background: white; border-radius: 16px; max-width: 450px; width: 100%; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .modal-header { text-align: center; margin-bottom: 1.5rem; }
+        .modal-icon { width: 60px; height: 60px; background: #fff3f3; color: #e76f51; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem; }
+        .modal-header h3 { color: #2d3436; margin-bottom: 0.5rem; }
+        .modal-header p { color: #636e72; font-size: 0.9rem; }
+        .modal-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+        .modal-actions .btn { flex: 1; }
+        .loading-container { min-height: 60vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1rem; color: #636e72; }
+        .spinner { animation: spin 1s linear infinite; font-size: 2rem; color: #1a5f2a; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } .profile-body { padding: 1.5rem; } .action-buttons { flex-direction: column; } .btn { width: 100%; } }
       `}</style>
 
       <div className="edit-profile-page">
@@ -707,36 +242,23 @@ const EditProfile = () => {
             </div>
           )}
 
-          {/* ─── Profile Info Card ─── */}
           <div className="profile-card">
             <div className="profile-avatar-section">
-              <div className="avatar-circle">
-                <span>{user.name?.charAt(0).toUpperCase()}</span>
-              </div>
+              <div className="avatar-circle"><span>{user.name?.charAt(0).toUpperCase()}</span></div>
               <div className="user-name">{user.name}</div>
               <span className="user-role">{roleLabels[user.role] || user.role}</span>
             </div>
 
             <div className="profile-body">
-              <div className="section-title">
-                <FaUser /> Personal Information
-              </div>
+              <div className="section-title"><FaUser /> Personal Information</div>
 
               <form onSubmit={handleSave}>
                 <div className="form-grid">
-                  {/* Name */}
                   <div className="form-group">
                     <label className="form-label"><FaUser /> Full Name *</label>
                     {isEditing ? (
                       <>
-                        <input
-                          type="text"
-                          name="name"
-                          className={`form-input ${errors.name ? 'error' : ''}`}
-                          value={formData.name}
-                          onChange={handleChange}
-                          placeholder="Your full name"
-                        />
+                        <input type="text" name="name" className={`form-input ${errors.name ? 'error' : ''}`} value={formData.name} onChange={handleChange} placeholder="Your full name" />
                         {errors.name && <span className="error-text">{errors.name}</span>}
                       </>
                     ) : (
@@ -744,19 +266,11 @@ const EditProfile = () => {
                     )}
                   </div>
 
-                  {/* Email */}
                   <div className="form-group">
-                    <label className="form-label"><FaEnvelope /> Email Address *</label>
+                    <label className="form-label"><FaEnvelope /> Email *</label>
                     {isEditing ? (
                       <>
-                        <input
-                          type="email"
-                          name="email"
-                          className={`form-input ${errors.email ? 'error' : ''}`}
-                          value={formData.email}
-                          onChange={handleChange}
-                          placeholder="your@email.com"
-                        />
+                        <input type="email" name="email" className={`form-input ${errors.email ? 'error' : ''}`} value={formData.email} onChange={handleChange} placeholder="your@email.com" />
                         {errors.email && <span className="error-text">{errors.email}</span>}
                       </>
                     ) : (
@@ -764,124 +278,67 @@ const EditProfile = () => {
                     )}
                   </div>
 
-                  {/* Phone */}
                   <div className="form-group">
-                    <label className="form-label"><FaPhone /> Phone Number</label>
+                    <label className="form-label"><FaPhone /> Phone</label>
                     {isEditing ? (
                       <>
-                        <input
-                          type="tel"
-                          name="phone"
-                          className={`form-input ${errors.phone ? 'error' : ''}`}
-                          value={formData.phone}
-                          onChange={handleChange}
-                          placeholder="+1 234 567 890"
-                        />
+                        <input type="tel" name="phone" className={`form-input ${errors.phone ? 'error' : ''}`} value={formData.phone} onChange={handleChange} placeholder="+1 234 567 890" />
                         {errors.phone && <span className="error-text">{errors.phone}</span>}
                       </>
                     ) : (
-                      <div className="info-value">
-                        <FaPhone /> 
-                        {user.phone ? user.phone : <span className="empty">Not provided</span>}
-                      </div>
+                      <div className="info-value"><FaPhone /> {user.phone || <span className="empty">Not provided</span>}</div>
                     )}
                   </div>
 
-                  {/* Company */}
                   <div className="form-group">
                     <label className="form-label"><FaBuilding /> Company</label>
                     {isEditing ? (
-                      <input
-                        type="text"
-                        name="company"
-                        className="form-input"
-                        value={formData.company}
-                        onChange={handleChange}
-                        placeholder="Company name (optional)"
-                      />
+                      <input type="text" name="companyName" className="form-input" value={formData.companyName} onChange={handleChange} placeholder="Company name" />
                     ) : (
-                      <div className="info-value">
-                        <FaBuilding />
-                        {user.company ? user.company : <span className="empty">Not provided</span>}
-                      </div>
+                      <div className="info-value"><FaBuilding /> {user.companyName || <span className="empty">Not provided</span>}</div>
                     )}
                   </div>
 
-                  {/* Role (read-only) */}
                   <div className="form-group full-width">
-                    <label className="form-label">Account Role</label>
-                    <div className="info-value" style={{ background: '#f1f5f9' }}>
-                      {roleLabels[user.role] || user.role}
-                    </div>
+                    <label className="form-label">Role</label>
+                    <div className="info-value" style={{ background: '#f1f5f9' }}>{roleLabels[user.role] || user.role}</div>
                   </div>
                 </div>
 
-                {/* Action Buttons */}
                 <div className="action-buttons">
                   {isEditing ? (
                     <>
-                      <button 
-                        type="submit" 
-                        className="btn btn-primary"
-                        disabled={saving}
-                      >
+                      <button type="submit" className="btn btn-primary" disabled={saving}>
                         {saving ? <FaSpinner className="spinner" /> : <FaSave />}
                         {saving ? 'Saving...' : 'Save Changes'}
                       </button>
-                      <button 
-                        type="button" 
-                        className="btn btn-secondary"
-                        onClick={handleCancel}
-                        disabled={saving}
-                      >
+                      <button type="button" className="btn btn-secondary" onClick={handleCancel} disabled={saving}>
                         <FaTimes /> Cancel
                       </button>
                     </>
                   ) : (
                     <>
-                      <button 
-                        type="button" 
-                        className="btn btn-primary"
-                        onClick={() => setIsEditing(true)}
-                      >
+                      <button type="button" className="btn btn-primary" onClick={() => setIsEditing(true)}>
                         <FaEdit /> Edit Profile
                       </button>
-                      <button 
-                        type="button" 
-                        className="btn btn-outline"
-                        onClick={() => setShowPasswordSection(!showPasswordSection)}
-                      >
-                        <FaLock /> {showPasswordSection ? 'Hide Password' : 'Change Password'}
+                      <button type="button" className="btn btn-outline" onClick={() => setShowPasswordSection(!showPasswordSection)}>
+                        <FaLock /> {showPasswordSection ? 'Hide' : 'Change Password'}
                       </button>
                     </>
                   )}
                 </div>
               </form>
 
-              {/* ─── Change Password Section ─── */}
               {showPasswordSection && !isEditing && (
                 <div className="password-section">
-                  <div className="section-title">
-                    <FaLock /> Change Password
-                  </div>
+                  <div className="section-title"><FaLock /> Change Password</div>
                   <form onSubmit={handleChangePassword}>
                     <div className="form-grid">
                       <div className="form-group full-width">
                         <label className="form-label">Current Password</label>
                         <div className="password-input-wrapper">
-                          <input
-                            type={showPasswords.current ? 'text' : 'password'}
-                            name="currentPassword"
-                            className={`form-input ${passwordErrors.currentPassword ? 'error' : ''}`}
-                            value={passwordData.currentPassword}
-                            onChange={handlePasswordChange}
-                            placeholder="Enter current password"
-                          />
-                          <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))}
-                          >
+                          <input type={showPasswords.current ? 'text' : 'password'} name="currentPassword" className={`form-input ${passwordErrors.currentPassword ? 'error' : ''}`} value={passwordData.currentPassword} onChange={handlePasswordChange} placeholder="Current password" />
+                          <button type="button" className="password-toggle" onClick={() => setShowPasswords(p => ({ ...p, current: !p.current }))}>
                             {showPasswords.current ? <FaEyeSlash /> : <FaEye />}
                           </button>
                         </div>
@@ -891,19 +348,8 @@ const EditProfile = () => {
                       <div className="form-group">
                         <label className="form-label">New Password</label>
                         <div className="password-input-wrapper">
-                          <input
-                            type={showPasswords.new ? 'text' : 'password'}
-                            name="newPassword"
-                            className={`form-input ${passwordErrors.newPassword ? 'error' : ''}`}
-                            value={passwordData.newPassword}
-                            onChange={handlePasswordChange}
-                            placeholder="Min 6 characters"
-                          />
-                          <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))}
-                          >
+                          <input type={showPasswords.new ? 'text' : 'password'} name="newPassword" className={`form-input ${passwordErrors.newPassword ? 'error' : ''}`} value={passwordData.newPassword} onChange={handlePasswordChange} placeholder="Min 6 characters" />
+                          <button type="button" className="password-toggle" onClick={() => setShowPasswords(p => ({ ...p, new: !p.new }))}>
                             {showPasswords.new ? <FaEyeSlash /> : <FaEye />}
                           </button>
                         </div>
@@ -911,21 +357,10 @@ const EditProfile = () => {
                       </div>
 
                       <div className="form-group">
-                        <label className="form-label">Confirm New Password</label>
+                        <label className="form-label">Confirm Password</label>
                         <div className="password-input-wrapper">
-                          <input
-                            type={showPasswords.confirm ? 'text' : 'password'}
-                            name="confirmPassword"
-                            className={`form-input ${passwordErrors.confirmPassword ? 'error' : ''}`}
-                            value={passwordData.confirmPassword}
-                            onChange={handlePasswordChange}
-                            placeholder="Re-enter new password"
-                          />
-                          <button
-                            type="button"
-                            className="password-toggle"
-                            onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}
-                          >
+                          <input type={showPasswords.confirm ? 'text' : 'password'} name="confirmPassword" className={`form-input ${passwordErrors.confirmPassword ? 'error' : ''}`} value={passwordData.confirmPassword} onChange={handlePasswordChange} placeholder="Re-enter password" />
+                          <button type="button" className="password-toggle" onClick={() => setShowPasswords(p => ({ ...p, confirm: !p.confirm }))}>
                             {showPasswords.confirm ? <FaEyeSlash /> : <FaEye />}
                           </button>
                         </div>
@@ -934,23 +369,11 @@ const EditProfile = () => {
                     </div>
 
                     <div className="action-buttons">
-                      <button 
-                        type="submit" 
-                        className="btn btn-primary"
-                        disabled={changingPassword}
-                      >
+                      <button type="submit" className="btn btn-primary" disabled={changingPassword}>
                         {changingPassword ? <FaSpinner className="spinner" /> : <FaLock />}
                         {changingPassword ? 'Updating...' : 'Update Password'}
                       </button>
-                      <button 
-                        type="button" 
-                        className="btn btn-secondary"
-                        onClick={() => {
-                          setShowPasswordSection(false);
-                          setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-                          setPasswordErrors({});
-                        }}
-                      >
+                      <button type="button" className="btn btn-secondary" onClick={() => { setShowPasswordSection(false); setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' }); setPasswordErrors({}); }}>
                         <FaTimes /> Cancel
                       </button>
                     </div>
@@ -960,18 +383,12 @@ const EditProfile = () => {
             </div>
           </div>
 
-          {/* ─── Danger Zone Card ─── */}
           <div className="profile-card">
             <div className="profile-body">
-              <div className="danger-zone" style={{ margin: 0, border: 'none', padding: 0 }}>
-                <div className="danger-zone-title">
-                  <FaExclamationTriangle /> Danger Zone
-                </div>
-                <p>Once you delete your account, there is no going back. All your data will be permanently removed.</p>
-                <button 
-                  className="btn btn-danger"
-                  onClick={() => setShowDeleteModal(true)}
-                >
+              <div className="danger-zone">
+                <div className="danger-zone-title"><FaExclamationTriangle /> Danger Zone</div>
+                <p>Once deleted, your account cannot be recovered.</p>
+                <button className="btn btn-danger" onClick={() => setShowDeleteModal(true)}>
                   <FaTrashAlt /> Delete Account
                 </button>
               </div>
@@ -980,50 +397,24 @@ const EditProfile = () => {
         </div>
       </div>
 
-      {/* ─── Delete Account Modal ─── */}
       {showDeleteModal && (
         <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <div className="modal-icon">
-                <FaExclamationTriangle />
-              </div>
-              <h3>Delete Your Account?</h3>
-              <p>This action cannot be undone. All your data will be permanently removed.</p>
+              <div className="modal-icon"><FaExclamationTriangle /></div>
+              <h3>Delete Account?</h3>
+              <p>This cannot be undone. All data will be removed.</p>
             </div>
-
             <form onSubmit={handleDeleteAccount}>
               <div className="form-group">
-                <label className="form-label">Enter your password to confirm</label>
-                <input
-                  type="password"
-                  className="form-input"
-                  value={deletePassword}
-                  onChange={(e) => setDeletePassword(e.target.value)}
-                  placeholder="Your current password"
-                  autoFocus
-                  required
-                />
+                <label className="form-label">Enter password to confirm</label>
+                <input type="password" className="form-input" value={deletePassword} onChange={e => setDeletePassword(e.target.value)} placeholder="Your password" autoFocus required />
               </div>
-
               <div className="modal-actions">
-                <button 
-                  type="button" 
-                  className="btn btn-secondary"
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setDeletePassword('');
-                  }}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  className="btn btn-danger"
-                  disabled={deleting || !deletePassword}
-                >
+                <button type="button" className="btn btn-secondary" onClick={() => { setShowDeleteModal(false); setDeletePassword(''); }}>Cancel</button>
+                <button type="submit" className="btn btn-danger" disabled={deleting || !deletePassword}>
                   {deleting ? <FaSpinner className="spinner" /> : <FaTrashAlt />}
-                  {deleting ? 'Deleting...' : 'Delete Account'}
+                  {deleting ? 'Deleting...' : 'Delete'}
                 </button>
               </div>
             </form>

@@ -113,7 +113,7 @@ const AppContent = () => {
         <Route path="/faq" element={<FAQ />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
         <Route path="/edit-profile" element={
-  <ProtectedRoute allowedRoles={['donor', 'corporate', 'admin', 'vendor', 'beneficiary']}>
+  <ProtectedRoute>
     <EditProfile />
   </ProtectedRoute>
 } />
