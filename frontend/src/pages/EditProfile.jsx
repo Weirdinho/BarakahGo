@@ -8,13 +8,11 @@ import {
   FaLock, FaEye, FaEyeSlash
 } from 'react-icons/fa';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-
 const EditProfile = () => {
-  const { user, loading: authLoading, setUser } = useAuth();
+  const { user, loading: authLoading, updateUser, logout, api } = useAuth();
   const navigate = useNavigate();
 
-  const [isEditing, setIsEditing] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', phone: '', companyName: '' });
   const [originalData, setOriginalData] = useState({});
 
@@ -48,6 +46,12 @@ const EditProfile = () => {
   useEffect(() => {
     if (!authLoading && !user) navigate('/login');
   }, [authLoading, user, navigate]);
+
+  const openEditModal = () => {
+    setFormData(originalData);
+    setErrors({});
+    setShowEditModal(true);
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -86,22 +90,17 @@ const EditProfile = () => {
 
     setSaving(true); setMessage({ type: '', text: '' });
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/auth/profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to update');
-
-      setUser(prev => ({ ...prev, ...data.user }));
+      const res = await api.put('/auth/profile', formData);
+      updateUser(res.data.user);
       setOriginalData(formData);
-      setIsEditing(false);
+      setShowEditModal(false);
       setMessage({ type: 'success', text: 'Profile updated!' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } catch (err) { setMessage({ type: 'error', text: err.message }); }
-    finally { setSaving(false); }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to update profile' });
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangePassword = async (e) => {
@@ -111,31 +110,26 @@ const EditProfile = () => {
 
     setChangingPassword(true); setMessage({ type: '', text: '' });
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/auth/change-password`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ currentPassword: passwordData.currentPassword, newPassword: passwordData.newPassword })
+      await api.put('/auth/change-password', {
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to change password');
 
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
       setShowPasswordSection(false);
       setMessage({ type: 'success', text: 'Password changed!' });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } catch (err) { setMessage({ type: 'error', text: err.message }); }
-    finally { setChangingPassword(false); }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to change password' });
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
-  const handleCancel = () => {
+  const closeEditModal = () => {
     setFormData(originalData);
     setErrors({});
-    setIsEditing(false);
-    setShowPasswordSection(false);
-    setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
-    setPasswordErrors({});
-    setMessage({ type: '', text: '' });
+    setShowEditModal(false);
   };
 
   const handleDeleteAccount = async (e) => {
@@ -143,19 +137,13 @@ const EditProfile = () => {
     if (!deletePassword) return;
     setDeleting(true);
     try {
-      const token = localStorage.getItem('token');
-      const res = await fetch(`${API_URL}/auth/profile`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify({ password: deletePassword })
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || 'Failed to delete');
-
-      localStorage.removeItem('token');
-      setUser(null);
+      await api.delete('/auth/profile', { data: { password: deletePassword } });
+      logout();
       navigate('/');
-    } catch (err) { setMessage({ type: 'error', text: err.message }); setDeleting(false); }
+    } catch (err) {
+      setMessage({ type: 'error', text: err.response?.data?.message || 'Failed to delete account' });
+      setDeleting(false);
+    }
   };
 
   if (authLoading) return (
@@ -216,6 +204,9 @@ const EditProfile = () => {
         .danger-zone p { color: #636e72; font-size: 0.9rem; margin-bottom: 1rem; }
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 2000; padding: 1rem; backdrop-filter: blur(4px); }
         .modal-content { background: white; border-radius: 16px; max-width: 450px; width: 100%; padding: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+        .edit-modal-content { max-width: 560px; text-align: left; }
+        .edit-modal-content .modal-header { text-align: left; }
+        .edit-modal-content .form-grid { margin-top: 0.5rem; }
         .modal-header { text-align: center; margin-bottom: 1.5rem; }
         .modal-icon { width: 60px; height: 60px; background: #fff3f3; color: #e76f51; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; margin: 0 auto 1rem; }
         .modal-header h3 { color: #2d3436; margin-bottom: 0.5rem; }
@@ -252,84 +243,43 @@ const EditProfile = () => {
             <div className="profile-body">
               <div className="section-title"><FaUser /> Personal Information</div>
 
-              <form onSubmit={handleSave}>
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label className="form-label"><FaUser /> Full Name *</label>
-                    {isEditing ? (
-                      <>
-                        <input type="text" name="name" className={`form-input ${errors.name ? 'error' : ''}`} value={formData.name} onChange={handleChange} placeholder="Your full name" />
-                        {errors.name && <span className="error-text">{errors.name}</span>}
-                      </>
-                    ) : (
-                      <div className="info-value"><FaUser /> {user.name}</div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label"><FaEnvelope /> Email *</label>
-                    {isEditing ? (
-                      <>
-                        <input type="email" name="email" className={`form-input ${errors.email ? 'error' : ''}`} value={formData.email} onChange={handleChange} placeholder="your@email.com" />
-                        {errors.email && <span className="error-text">{errors.email}</span>}
-                      </>
-                    ) : (
-                      <div className="info-value"><FaEnvelope /> {user.email}</div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label"><FaPhone /> Phone</label>
-                    {isEditing ? (
-                      <>
-                        <input type="tel" name="phone" className={`form-input ${errors.phone ? 'error' : ''}`} value={formData.phone} onChange={handleChange} placeholder="+1 234 567 890" />
-                        {errors.phone && <span className="error-text">{errors.phone}</span>}
-                      </>
-                    ) : (
-                      <div className="info-value"><FaPhone /> {user.phone || <span className="empty">Not provided</span>}</div>
-                    )}
-                  </div>
-
-                  <div className="form-group">
-                    <label className="form-label"><FaBuilding /> Company</label>
-                    {isEditing ? (
-                      <input type="text" name="companyName" className="form-input" value={formData.companyName} onChange={handleChange} placeholder="Company name" />
-                    ) : (
-                      <div className="info-value"><FaBuilding /> {user.companyName || <span className="empty">Not provided</span>}</div>
-                    )}
-                  </div>
-
-                  <div className="form-group full-width">
-                    <label className="form-label">Role</label>
-                    <div className="info-value" style={{ background: '#f1f5f9' }}>{roleLabels[user.role] || user.role}</div>
-                  </div>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="form-label"><FaUser /> Full Name</label>
+                  <div className="info-value"><FaUser /> {user.name}</div>
                 </div>
 
-                <div className="action-buttons">
-                  {isEditing ? (
-                    <>
-                      <button type="submit" className="btn btn-primary" disabled={saving}>
-                        {saving ? <FaSpinner className="spinner" /> : <FaSave />}
-                        {saving ? 'Saving...' : 'Save Changes'}
-                      </button>
-                      <button type="button" className="btn btn-secondary" onClick={handleCancel} disabled={saving}>
-                        <FaTimes /> Cancel
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button type="button" className="btn btn-primary" onClick={() => setIsEditing(true)}>
-                        <FaEdit /> Edit Profile
-                      </button>
-                      <button type="button" className="btn btn-outline" onClick={() => setShowPasswordSection(!showPasswordSection)}>
-                        <FaLock /> {showPasswordSection ? 'Hide' : 'Change Password'}
-                      </button>
-                    </>
-                  )}
+                <div className="form-group">
+                  <label className="form-label"><FaEnvelope /> Email</label>
+                  <div className="info-value"><FaEnvelope /> {user.email}</div>
                 </div>
-              </form>
 
-              {showPasswordSection && !isEditing && (
+                <div className="form-group">
+                  <label className="form-label"><FaPhone /> Phone</label>
+                  <div className="info-value"><FaPhone /> {user.phone || <span className="empty">Not provided</span>}</div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label"><FaBuilding /> Company</label>
+                  <div className="info-value"><FaBuilding /> {user.companyName || <span className="empty">Not provided</span>}</div>
+                </div>
+
+                <div className="form-group full-width">
+                  <label className="form-label">Role</label>
+                  <div className="info-value" style={{ background: '#f1f5f9' }}>{roleLabels[user.role] || user.role}</div>
+                </div>
+              </div>
+
+              <div className="action-buttons">
+                <button type="button" className="btn btn-primary" onClick={openEditModal}>
+                  <FaEdit /> Edit Profile
+                </button>
+                <button type="button" className="btn btn-outline" onClick={() => setShowPasswordSection(!showPasswordSection)}>
+                  <FaLock /> {showPasswordSection ? 'Hide' : 'Change Password'}
+                </button>
+              </div>
+
+              {showPasswordSection && (
                 <div className="password-section">
                   <div className="section-title"><FaLock /> Change Password</div>
                   <form onSubmit={handleChangePassword}>
@@ -415,6 +365,52 @@ const EditProfile = () => {
                 <button type="submit" className="btn btn-danger" disabled={deleting || !deletePassword}>
                   {deleting ? <FaSpinner className="spinner" /> : <FaTrashAlt />}
                   {deleting ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={closeEditModal}>
+          <div className="modal-content edit-modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Edit Profile</h3>
+              <p>Update your account information</p>
+            </div>
+            <form onSubmit={handleSave}>
+              <div className="form-grid">
+                <div className="form-group full-width">
+                  <label className="form-label"><FaUser /> Full Name *</label>
+                  <input type="text" name="name" className={`form-input ${errors.name ? 'error' : ''}`} value={formData.name} onChange={handleChange} placeholder="Your full name" autoFocus />
+                  {errors.name && <span className="error-text">{errors.name}</span>}
+                </div>
+
+                <div className="form-group full-width">
+                  <label className="form-label"><FaEnvelope /> Email *</label>
+                  <input type="email" name="email" className={`form-input ${errors.email ? 'error' : ''}`} value={formData.email} onChange={handleChange} placeholder="your@email.com" />
+                  {errors.email && <span className="error-text">{errors.email}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label"><FaPhone /> Phone</label>
+                  <input type="tel" name="phone" className={`form-input ${errors.phone ? 'error' : ''}`} value={formData.phone} onChange={handleChange} placeholder="+1 234 567 890" />
+                  {errors.phone && <span className="error-text">{errors.phone}</span>}
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label"><FaBuilding /> Company</label>
+                  <input type="text" name="companyName" className="form-input" value={formData.companyName} onChange={handleChange} placeholder="Company name" />
+                </div>
+              </div>
+
+              <div className="modal-actions">
+                <button type="button" className="btn btn-secondary" onClick={closeEditModal} disabled={saving}>
+                  <FaTimes /> Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>
+                  {saving ? <FaSpinner className="spinner" /> : <FaSave />}
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>

@@ -52,22 +52,22 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     const res = await api.post('/auth/login', { email, password });
     const { token: newToken, user: userData } = res.data;
-    
+
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(userData);
-    
+
     return userData;
   };
 
   const register = async (userData) => {
     const res = await api.post('/auth/register', userData);
     const { token: newToken, user: newUser } = res.data;
-    
+
     localStorage.setItem('token', newToken);
     setToken(newToken);
     setUser(newUser);
-    
+
     return newUser;
   };
 
@@ -78,8 +78,15 @@ export const AuthProvider = ({ children }) => {
     delete api.defaults.headers.common['Authorization'];
   }, []);
 
+  // Merge partial updates (e.g. from PUT /auth/profile) into the current user
+  // object without needing a full refetch. Falls back to replacing user
+  // entirely if there's no existing user to merge into.
+  const updateUser = useCallback((updates) => {
+    setUser(prev => (prev ? { ...prev, ...updates } : updates));
+  }, []);
+
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading, api }}>
+    <AuthContext.Provider value={{ user, token, login, register, logout, loading, api, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
