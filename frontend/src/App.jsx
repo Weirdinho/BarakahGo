@@ -24,6 +24,7 @@ import ResetPassword from './pages/ResetPassword';
 import Partnerships from './pages/Partnerships';
 import FAQ from './pages/FAQ';
 import HowItWorksPage from './pages/HowItWorksPage';
+import EditProfile from './pages/EditProfile';
 
 const AuthLoading = () => (
   <div style={{
@@ -111,7 +112,11 @@ const AppContent = () => {
         <Route path="/partnerships" element={<Partnerships />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
-        
+        <Route path="/edit-profile" element={
+  <ProtectedRoute allowedRoles={['donor', 'corporate', 'admin', 'vendor', 'beneficiary']}>
+    <EditProfile />
+  </ProtectedRoute>
+} />
         <Route path="/admin" element={
           <ProtectedRoute allowedRoles={['admin']}>
             <AdminDashboard />

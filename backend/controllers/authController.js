@@ -350,3 +350,34 @@ exports.deleteAccount = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+// @desc    Change password for logged-in user
+// @route   PUT /api/auth/change-password
+exports.changePassword = async (req, res) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+
+  try {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user._id || req.user.id;
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const isMatch = await user.comparePassword(currentPassword);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Current password is incorrect' });
+    }
+
+    user.password = newPassword;
+    await user.save();
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('CHANGE PASSWORD ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};

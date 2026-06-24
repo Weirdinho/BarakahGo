@@ -47,4 +47,10 @@ router.delete('/profile', auth, [
   body('password').notEmpty().withMessage('Password is required to delete your account')
 ], authController.deleteAccount);
 
+// @route   PUT /api/auth/change-password
+router.put('/change-password', auth, [
+  body('currentPassword').notEmpty().withMessage('Current password is required'),
+  body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters')
+], authController.changePassword);
+
 module.exports = router;
