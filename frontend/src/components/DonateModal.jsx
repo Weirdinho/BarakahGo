@@ -679,7 +679,7 @@ const DonateModal = ({ onClose }) => {
 
           {step === 1 && (
             <div className="secure-badge">
-              <FaLock /> Secured by Paystack — Card, Bank Transfer, USSD
+              <FaLock /> Secured by Paystack
             </div>
           )}
         </div>

@@ -432,7 +432,7 @@ const GuestDonate = () => {
             </div>
 
             <div className="paystack-badge">
-              <FaCreditCard /> Secured by <strong>Paystack</strong> — Card, Bank, USSD
+              <FaCreditCard /> Secured by <strong>Paystack</strong>
             </div>
 
             {errors.submit && (
