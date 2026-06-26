@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle, FaArrowLeft, FaKey } from 'react-icons/fa';
+import { FaEnvelope, FaLock, FaUser, FaPhone, FaBuilding, FaCheckCircle, FaExclamationCircle, FaArrowLeft, FaKey, FaPaperPlane } from 'react-icons/fa';
 import api from '../services/api';
 
 // ============================================
@@ -81,16 +81,64 @@ const FormField = ({ label, name, type = 'text', placeholder, icon: Icon, requir
 };
 
 // ============================================
+// Primary button (shared styling for all submit buttons)
+// ============================================
+const PrimaryButton = ({ loading, children, ...props }) => (
+  <button
+    type="submit"
+    disabled={loading}
+    style={{
+      width: '100%', padding: '1rem', background: loading ? '#4CAF50' : '#1a5f2a',
+      color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem',
+      fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer',
+      transition: 'all 0.3s ease', marginTop: '0.5rem', display: 'flex',
+      alignItems: 'center', justifyContent: 'center', gap: '8px',
+      boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
+    }}
+    onMouseEnter={(e) => {
+      if (!loading) {
+        e.target.style.background = '#2d8a3e';
+        e.target.style.transform = 'translateY(-2px)';
+        e.target.style.boxShadow = '0 6px 20px rgba(26, 95, 42, 0.5)';
+      }
+    }}
+    onMouseLeave={(e) => {
+      if (!loading) {
+        e.target.style.background = '#1a5f2a';
+        e.target.style.transform = 'translateY(0)';
+        e.target.style.boxShadow = '0 4px 15px rgba(26, 95, 42, 0.4)';
+      }
+    }}
+    {...props}
+  >
+    {loading ? (
+      <>
+        <span style={{
+          width: '18px', height: '18px', border: '2px solid #fff',
+          borderTopColor: 'transparent', borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite', display: 'inline-block'
+        }} />
+        <span>Please wait...</span>
+      </>
+    ) : children}
+  </button>
+);
+
+// ============================================
 // Main Login Component
 // ============================================
 const Login = () => {
-  const { user, login, register } = useAuth();
+  const { user, login, register, resendVerification } = useAuth();
   const navigate = useNavigate();
   const cardRef = useRef(null);
 
   const [isLogin, setIsLogin] = useState(true);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [showCheckEmail, setShowCheckEmail] = useState(false); // shown right after successful sign-up
+  const [pendingVerifyEmail, setPendingVerifyEmail] = useState(''); // email awaiting verification
+  const [needsVerification, setNeedsVerification] = useState(false); // login blocked, show resend option
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -133,6 +181,7 @@ const Login = () => {
     if (fieldErrors[name]) setFieldErrors(prev => ({ ...prev, [name]: '' }));
     if (error) setError('');
     if (success) setSuccess('');
+    if (needsVerification) setNeedsVerification(false);
   };
 
   const handleSubmit = async (e) => {
@@ -140,19 +189,47 @@ const Login = () => {
     if (!validateForm()) return;
     setLoading(true);
     setError('');
+    setNeedsVerification(false);
     try {
-      let userData;
-      if (isLogin) userData = await login(formData.email, formData.password);
-      else {
+      if (isLogin) {
+        await login(formData.email, formData.password);
+        navigate('/portal');
+      } else {
         const { confirmPassword, ...registrationData } = formData;
-        userData = await register(registrationData);
+        const result = await register(registrationData);
+        // Registration no longer logs the user in — it creates an unverified
+        // account and emails a link. Show the "check your inbox" screen instead
+        // of navigating to the portal.
+        setPendingVerifyEmail(result.email || formData.email);
+        setShowCheckEmail(true);
       }
-      navigate('/portal');
     } catch (err) {
-      let errorMessage = err.response?.data?.message || err.message || 'An unexpected error occurred';
+      const data = err.response?.data;
+      let errorMessage = data?.message || err.message || 'An unexpected error occurred';
       setError(errorMessage);
+      // Login can fail specifically because the account isn't verified yet —
+      // surface a resend option right there instead of just showing an error.
+      if (data?.needsVerification) {
+        setNeedsVerification(true);
+        setPendingVerifyEmail(data.email || formData.email);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    if (!pendingVerifyEmail) return;
+    setResendLoading(true);
+    setError('');
+    setSuccess('');
+    try {
+      const result = await resendVerification(pendingVerifyEmail);
+      setSuccess(result.message);
+    } catch (err) {
+      setError(err.response?.data?.message || err.message || 'An unexpected error occurred');
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -182,30 +259,121 @@ const Login = () => {
     }
   };
 
-  const switchMode = () => {
-    setIsLogin(prev => !prev);
+  const resetAllState = () => {
     setShowForgotPassword(false);
+    setShowCheckEmail(false);
+    setNeedsVerification(false);
+    setPendingVerifyEmail('');
     setError('');
     setSuccess('');
     setFieldErrors({});
+  };
+
+  const switchMode = () => {
+    setIsLogin(prev => !prev);
+    resetAllState();
     setFormData({ name: '', email: '', password: '', confirmPassword: '', phone: '', role: 'donor', companyName: '' });
     if (cardRef.current) cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const goToForgotPassword = () => {
+    resetAllState();
     setShowForgotPassword(true);
-    setError('');
-    setSuccess('');
-    setFieldErrors({});
     setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
   };
 
   const goBackToLogin = () => {
-    setShowForgotPassword(false);
-    setError('');
-    setSuccess('');
-    setFieldErrors({});
+    resetAllState();
+    setIsLogin(true);
   };
+
+  // ============================================
+  // "Check your email" screen — shown right after sign-up
+  // ============================================
+  if (showCheckEmail) {
+    return (
+      <div className="login-page" style={{
+        minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'linear-gradient(135deg, #1a5f2a 0%, #0d3d18 100%)', padding: '2rem 1rem'
+      }}>
+        <div ref={cardRef} className="login-card" style={{
+          background: '#fff', borderRadius: '20px', boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+          padding: '2.5rem', width: '100%', maxWidth: '480px', animation: 'slideUp 0.5s ease-out',
+          textAlign: 'center'
+        }}>
+          <div style={{
+            width: '60px', height: '60px', background: 'linear-gradient(135deg, #1a5f2a, #2d8a3e)',
+            borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            margin: '0 auto 1.5rem'
+          }}>
+            <FaPaperPlane size={26} color="#fff" />
+          </div>
+          <h2 style={{ fontSize: '1.6rem', fontWeight: '700', color: '#2d3436', marginBottom: '0.75rem' }}>
+            Check Your Email
+          </h2>
+          <p style={{ color: '#636e72', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '0.5rem' }}>
+            We've sent a verification link to
+          </p>
+          <p style={{ color: '#1a5f2a', fontWeight: '600', fontSize: '1rem', marginBottom: '1.5rem' }}>
+            {pendingVerifyEmail}
+          </p>
+          <p style={{ color: '#636e72', fontSize: '0.9rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
+            Click the link in that email to verify your account and finish signing up. The link expires in 24 hours.
+          </p>
+
+          {error && (
+            <div style={{
+              background: '#fee2e2', border: '1px solid #fecaca', color: '#dc2626',
+              padding: '0.85rem 1rem', borderRadius: '12px', marginBottom: '1.25rem',
+              fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left'
+            }}>
+              <FaExclamationCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{error}</span>
+            </div>
+          )}
+          {success && (
+            <div style={{
+              background: '#e8f5e9', border: '1px solid #c8e6c9', color: '#1a5f2a',
+              padding: '0.85rem 1rem', borderRadius: '12px', marginBottom: '1.25rem',
+              fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '8px', textAlign: 'left'
+            }}>
+              <FaCheckCircle size={16} style={{ flexShrink: 0 }} />
+              <span>{success}</span>
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleResendVerification}
+            disabled={resendLoading}
+            style={{
+              background: 'none', border: '2px solid #1a5f2a', color: '#1a5f2a', fontWeight: '600',
+              cursor: resendLoading ? 'not-allowed' : 'pointer', fontSize: '0.9rem',
+              padding: '0.75rem 1.5rem', borderRadius: '10px', width: '100%', marginBottom: '1rem'
+            }}
+          >
+            {resendLoading ? 'Sending...' : "Didn't get it? Resend email"}
+          </button>
+
+          <button
+            type="button"
+            onClick={goBackToLogin}
+            style={{
+              background: 'none', border: 'none', color: '#636e72', fontWeight: '500',
+              cursor: 'pointer', fontSize: '0.85rem', padding: '0', display: 'inline-flex',
+              alignItems: 'center', gap: '6px'
+            }}
+          >
+            <FaArrowLeft size={12} />
+            Back to Sign In
+          </button>
+        </div>
+        <style>{`
+          @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        `}</style>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page" style={{
@@ -262,6 +430,24 @@ const Login = () => {
           </div>
         )}
 
+        {/* Inline resend option when login blocks on an unverified account */}
+        {needsVerification && (
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: '-0.5rem' }}>
+            <button
+              type="button"
+              onClick={handleResendVerification}
+              disabled={resendLoading}
+              style={{
+                background: 'none', border: 'none', color: '#1a5f2a', fontWeight: '600',
+                cursor: resendLoading ? 'not-allowed' : 'pointer', fontSize: '0.85rem',
+                textDecoration: 'underline', textUnderlineOffset: '2px'
+              }}
+            >
+              {resendLoading ? 'Sending...' : 'Resend verification email'}
+            </button>
+          </div>
+        )}
+
         {/* Success Alert */}
         {success && (
           <div style={{
@@ -290,48 +476,10 @@ const Login = () => {
               error={fieldErrors.email}
             />
 
-            <button 
-              type="submit" 
-              disabled={loading}
-              style={{ 
-                width: '100%', padding: '1rem', background: loading ? '#4CAF50' : '#1a5f2a',
-                color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem',
-                fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease', marginTop: '0.5rem', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', gap: '8px',
-                boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.background = '#2d8a3e';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(26, 95, 42, 0.5)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.background = '#1a5f2a';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(26, 95, 42, 0.4)';
-                }
-              }}
-            >
-              {loading ? (
-                <>
-                  <span style={{
-                    width: '18px', height: '18px', border: '2px solid #fff',
-                    borderTopColor: 'transparent', borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite', display: 'inline-block'
-                  }} />
-                  <span>Please wait...</span>
-                </>
-              ) : (
-                <>
-                  <FaEnvelope size={16} />
-                  <span>Send Reset Link</span>
-                </>
-              )}
-            </button>
+            <PrimaryButton loading={loading}>
+              <FaEnvelope size={16} />
+              <span>Send Reset Link</span>
+            </PrimaryButton>
 
             <div style={{ textAlign: 'center', marginTop: '1.5rem' }}>
               <button 
@@ -409,42 +557,9 @@ const Login = () => {
               </div>
             )}
 
-            <button type="submit" disabled={loading}
-              style={{ 
-                width: '100%', padding: '1rem', background: loading ? '#4CAF50' : '#1a5f2a',
-                color: '#fff', border: 'none', borderRadius: '12px', fontSize: '1rem',
-                fontWeight: '600', cursor: loading ? 'not-allowed' : 'pointer',
-                transition: 'all 0.3s ease', marginTop: '0.5rem', display: 'flex',
-                alignItems: 'center', justifyContent: 'center', gap: '8px',
-                boxShadow: loading ? 'none' : '0 4px 15px rgba(26, 95, 42, 0.4)'
-              }}
-              onMouseEnter={(e) => {
-                if (!loading) {
-                  e.target.style.background = '#2d8a3e';
-                  e.target.style.transform = 'translateY(-2px)';
-                  e.target.style.boxShadow = '0 6px 20px rgba(26, 95, 42, 0.5)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!loading) {
-                  e.target.style.background = '#1a5f2a';
-                  e.target.style.transform = 'translateY(0)';
-                  e.target.style.boxShadow = '0 4px 15px rgba(26, 95, 42, 0.4)';
-                }
-              }}>
-              {loading ? (
-                <>
-                  <span style={{
-                    width: '18px', height: '18px', border: '2px solid #fff',
-                    borderTopColor: 'transparent', borderRadius: '50%',
-                    animation: 'spin 0.8s linear infinite', display: 'inline-block'
-                  }} />
-                  <span>Please wait...</span>
-                </>
-              ) : (
-                <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
-              )}
-            </button>
+            <PrimaryButton loading={loading}>
+              <span>{isLogin ? 'Sign In' : 'Create Account'}</span>
+            </PrimaryButton>
 
             <div style={{ textAlign: 'center', marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid #dfe6e9' }}>
               <p style={{ color: '#636e72', fontSize: '0.9rem' }}>

@@ -25,6 +25,7 @@ import Partnerships from './pages/Partnerships';
 import FAQ from './pages/FAQ';
 import HowItWorksPage from './pages/HowItWorksPage';
 import EditProfile from './pages/EditProfile';
+import VerifyEmail from './pages/VerifyEmail';
 
 const AuthLoading = () => (
   <div style={{
@@ -112,6 +113,7 @@ const AppContent = () => {
         <Route path="/partnerships" element={<Partnerships />} />
         <Route path="/faq" element={<FAQ />} />
         <Route path="/how-it-works" element={<HowItWorksPage />} />
+        <Route path="/verify-email" element={<VerifyEmail />} />
         <Route path="/edit-profile" element={
   <ProtectedRoute>
     <EditProfile />

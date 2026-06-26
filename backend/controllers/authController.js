@@ -18,11 +18,67 @@ const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '30d' });
 };
 
-// We never store the raw reset token in the DB — only its hash.
-// That way, even if the database is leaked, no one can use it to reset accounts.
+// We never store the raw token in the DB — only its hash.
+// That way, even if the database is leaked, no one can use it to reset/verify accounts.
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
-// @desc    Register a new user
+const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
+const EMAIL_FROM = process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com';
+
+// Shared helper to actually send (or log, in dev) the verification email
+const sendVerificationEmail = async ({ email, name, rawToken }) => {
+  const verifyUrl = `${CLIENT_URL}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
+
+  if (!process.env.SENDGRID_API_KEY) {
+    console.log('🔗 Verification link (dev only, no SENDGRID_API_KEY set):', verifyUrl);
+    return { devUrl: verifyUrl };
+  }
+
+  const msg = {
+    to: email,
+    from: EMAIL_FROM,
+    subject: 'Verify Your Email - Amanah Charity Foundation',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1a5f2a; padding: 20px; text-align: center;">
+          <h1 style="color: #fff; margin: 0;">Amanah Charity Foundation</h1>
+        </div>
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #2d3436;">Verify Your Email</h2>
+          <p style="color: #636e72; line-height: 1.6;">
+            Hello ${name || 'there'},
+          </p>
+          <p style="color: #636e72; line-height: 1.6;">
+            Thanks for signing up! Please confirm this is your email address by clicking the button below. This link expires in 24 hours.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verifyUrl}" style="background: #1a5f2a; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block;">
+              Verify Email
+            </a>
+          </div>
+          <p style="color: #636e72; font-size: 0.85rem; line-height: 1.6;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${verifyUrl}" style="color: #1a5f2a; word-break: break-all;">${verifyUrl}</a>
+          </p>
+          <p style="color: #b2bec3; font-size: 0.85rem;">
+            If you didn't create an account with us, you can safely ignore this email.
+          </p>
+          <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
+          <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
+            Amanah Charity Foundation<br>
+            Making a difference, one donation at a time.
+          </p>
+        </div>
+      </div>
+    `
+  };
+
+  await sgMail.send(msg);
+  console.log('✅ Verification email sent via SendGrid to:', email);
+  return {};
+};
+
+// @desc    Register a new user (creates an UNVERIFIED account and emails a verify link)
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
   const errors = validationResult(req);
@@ -32,27 +88,88 @@ exports.register = async (req, res) => {
 
   try {
     const { name, email, password, phone, role, companyName } = req.body;
+    const normalizedEmail = email.toLowerCase().trim();
 
-    let user = await User.findOne({ email });
+    let user = await User.findOne({ email: normalizedEmail });
     if (user) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    const rawToken = crypto.randomBytes(32).toString('hex');
+
     user = new User({
       name,
-      email,
+      email: normalizedEmail,
       password,
       phone,
       role: role || 'donor',
-      companyName
+      companyName,
+      isVerified: false,
+      verificationToken: hashToken(rawToken),
+      verificationTokenExpiry: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
     });
 
     await user.save();
 
-    const token = generateToken(user._id);
+    let devUrl;
+    try {
+      const result = await sendVerificationEmail({ email: normalizedEmail, name: user.name, rawToken });
+      devUrl = result.devUrl;
+    } catch (emailErr) {
+      console.error('❌ Failed to send verification email:', emailErr.message);
+      // The account still exists — the user can use "resend verification" later.
+      // We don't fail registration just because the email send hiccuped.
+    }
 
+    // No JWT here — the user can't log in until they verify.
     res.status(201).json({
-      token,
+      message: 'Account created! Please check your email to verify your account before signing in.',
+      email: normalizedEmail,
+      ...(process.env.NODE_ENV === 'development' && devUrl && { verifyUrl: devUrl })
+    });
+  } catch (error) {
+    console.error('REGISTER ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Verify a user's email using the token from the emailed link
+// @route   POST /api/auth/verify-email
+exports.verifyEmail = async (req, res) => {
+  try {
+    const { token, email } = req.body;
+    if (!token || !email) {
+      return res.status(400).json({ message: 'Invalid verification link.' });
+    }
+
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const user = await User.findOne({
+      email: normalizedEmail,
+      verificationToken: hashToken(token),
+      verificationTokenExpiry: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      // Could be wrong, expired, or already used. Check if there's an already-verified
+      // account with this email so we can give a friendlier message in that case.
+      const alreadyVerified = await User.findOne({ email: normalizedEmail, isVerified: true });
+      if (alreadyVerified) {
+        return res.json({ message: 'This email is already verified. You can sign in.', alreadyVerified: true });
+      }
+      return res.status(400).json({ message: 'This verification link is invalid or has expired.' });
+    }
+
+    user.isVerified = true;
+    user.verificationToken = undefined;
+    user.verificationTokenExpiry = undefined;
+    await user.save();
+
+    const jwtToken = generateToken(user._id);
+
+    res.json({
+      message: 'Your email has been verified! You can now sign in.',
+      token: jwtToken,
       user: {
         id: user._id,
         name: user.name,
@@ -62,7 +179,48 @@ exports.register = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('REGISTER ERROR:', error);
+    console.error('VERIFY EMAIL ERROR:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Resend the verification email (in case the original didn't arrive / expired)
+// @route   POST /api/auth/resend-verification
+exports.resendVerification = async (req, res) => {
+  // Same "don't leak which emails exist" approach as forgot-password
+  const genericMessage = 'If an unverified account exists with this email, a new verification link has been sent.';
+
+  try {
+    const email = req.body.email.toLowerCase().trim();
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.json({ message: genericMessage });
+    }
+
+    if (user.isVerified) {
+      return res.json({ message: 'This account is already verified. You can sign in.' });
+    }
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    user.verificationToken = hashToken(rawToken);
+    user.verificationTokenExpiry = Date.now() + 24 * 60 * 60 * 1000;
+    await user.save();
+
+    let devUrl;
+    try {
+      const result = await sendVerificationEmail({ email, name: user.name, rawToken });
+      devUrl = result.devUrl;
+    } catch (emailErr) {
+      console.error('❌ Failed to resend verification email:', emailErr.message);
+    }
+
+    res.json({
+      message: genericMessage,
+      ...(process.env.NODE_ENV === 'development' && devUrl && { verifyUrl: devUrl })
+    });
+  } catch (error) {
+    console.error('RESEND VERIFICATION ERROR:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -78,7 +236,7 @@ exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
@@ -86,6 +244,14 @@ exports.login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isVerified) {
+      return res.status(403).json({
+        message: 'Please verify your email before signing in. Check your inbox for the verification link.',
+        needsVerification: true,
+        email: user.email
+      });
     }
 
     const token = generateToken(user._id);
@@ -135,8 +301,7 @@ exports.forgotPassword = async (req, res) => {
     user.resetPasswordExpiry = Date.now() + 60 * 60 * 1000; // 1 hour
     await user.save();
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
-    const resetUrl = `${clientUrl}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
+    const resetUrl = `${CLIENT_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     console.log('📨 Password reset requested for:', { email, time: new Date().toISOString() });
 
@@ -151,7 +316,7 @@ exports.forgotPassword = async (req, res) => {
 
     const msg = {
       to: email,
-      from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
+      from: EMAIL_FROM,
       subject: 'Reset Your Password - Amanah Charity Foundation',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -350,6 +515,7 @@ exports.deleteAccount = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 // @desc    Change password for logged-in user
 // @route   PUT /api/auth/change-password
 exports.changePassword = async (req, res) => {

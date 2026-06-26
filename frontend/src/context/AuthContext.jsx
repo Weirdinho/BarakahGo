@@ -60,15 +60,35 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
+  // Registration no longer logs the user in directly — the account is created
+  // unverified, and a verification email is sent. We just return the server's
+  // response (message + email) so the UI can show a "check your inbox" screen.
   const register = async (userData) => {
     const res = await api.post('/auth/register', userData);
+    return res.data;
+  };
+
+  // Called when the user lands on /verify-email?token=...&email=... after
+  // clicking the link in their inbox. On success the server returns a JWT,
+  // just like login does, so we log them straight in.
+  const verifyEmail = async (token, email) => {
+    const res = await api.post('/auth/verify-email', { token, email });
     const { token: newToken, user: newUser } = res.data;
 
-    localStorage.setItem('token', newToken);
-    setToken(newToken);
-    setUser(newUser);
+    if (newToken && newUser) {
+      localStorage.setItem('token', newToken);
+      setToken(newToken);
+      setUser(newUser);
+    }
 
-    return newUser;
+    return res.data;
+  };
+
+  // Lets a user request a fresh verification email if the first one
+  // expired or never arrived.
+  const resendVerification = async (email) => {
+    const res = await api.post('/auth/resend-verification', { email });
+    return res.data;
   };
 
   const logout = useCallback(() => {
@@ -86,7 +106,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, loading, api, updateUser }}>
+    <AuthContext.Provider value={{ user, token, login, register, verifyEmail, resendVerification, logout, loading, api, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
