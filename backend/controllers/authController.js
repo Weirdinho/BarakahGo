@@ -37,11 +37,11 @@ const sendVerificationEmail = async ({ email, name, rawToken }) => {
   const msg = {
     to: email,
     from: EMAIL_FROM,
-    subject: 'Verify Your Email - Amanah Charity Foundation',
+    subject: 'Verify Your Email - Amanah Charitable and Ikhlas Initiative',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <div style="background: #1a5f2a; padding: 20px; text-align: center;">
-          <h1 style="color: #fff; margin: 0;">Amanah Charity Foundation</h1>
+          <h1 style="color: #fff; margin: 0;">Amanah Charitable and Ikhlas Initiative</h1>
         </div>
         <div style="padding: 30px; background: #f9f9f9;">
           <h2 style="color: #2d3436;">Verify Your Email</h2>
@@ -65,7 +65,7 @@ const sendVerificationEmail = async ({ email, name, rawToken }) => {
           </p>
           <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
           <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
-            Amanah Charity Foundation<br>
+            Amanah Charitable and Ikhlas Initiative<br>
             Making a difference, one donation at a time.
           </p>
         </div>
@@ -317,11 +317,11 @@ exports.forgotPassword = async (req, res) => {
     const msg = {
       to: email,
       from: EMAIL_FROM,
-      subject: 'Reset Your Password - Amanah Charity Foundation',
+      subject: 'Reset Your Password - Amanah Charitable and Ikhlas Initiative',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <div style="background: #1a5f2a; padding: 20px; text-align: center;">
-            <h1 style="color: #fff; margin: 0;">Amanah Charity Foundation</h1>
+            <h1 style="color: #fff; margin: 0;">Amanah Charitable and Ikhlas Initiative</h1>
           </div>
           <div style="padding: 30px; background: #f9f9f9;">
             <h2 style="color: #2d3436;">Reset Your Password</h2>
@@ -345,7 +345,7 @@ exports.forgotPassword = async (req, res) => {
             </p>
             <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
             <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
-              Amanah Charity Foundation<br>
+              Amanah Charitable and Ikhlas Initiative<br>
               Making a difference, one donation at a time.
             </p>
           </div>

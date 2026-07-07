@@ -519,7 +519,7 @@ const Navbar = () => {
             className="logo"
             onClick={closeMenu}
           >
-            <div className="logo-icon">ACF</div>
+            <div className="logo-icon">ACI</div>
         
           </Link>
 

@@ -12,7 +12,7 @@ const Hero = () => {
           </h1>
           <p>
             Aid access for everyone, even the unbanked and underserved. 
-            Amanah Charity Foundation sends your donations as e-vouchers to ensure that even 
+            Amanah Charitable and Ikhlas Initiative sends your donations as e-vouchers to ensure that even 
             the unbanked can access aid.
           </p>
           <div className="hero-btns">
@@ -29,7 +29,7 @@ const Hero = () => {
           <div className="phone-mockup">
             <div className="phone-screen">
               <div className="phone-header">
-                <h4>Amanah Charity Foundation</h4>
+                <h4>Amanah Charitable Initiative</h4>
               </div>
               <div className="phone-body">
                 <div className="phone-card">

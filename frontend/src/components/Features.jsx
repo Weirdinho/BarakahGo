@@ -17,7 +17,7 @@ const features = [
   {
     icon: <FaHandHoldingHeart />,
     title: 'Choice & Dignity',
-    description: 'Amanah Charity Foundation matches donor intent with beneficiary needs with our vendor network, preventing waste of donations while giving purposeful choice.'
+    description: 'Amanah Charitable and Ikhlas Initiative matches donor intent with beneficiary needs with our vendor network, preventing waste of donations while giving purposeful choice.'
   },
   {
     icon: <FaShieldAlt />,
@@ -27,7 +27,7 @@ const features = [
   {
     icon: <FaUsers />,
     title: 'Collaborative Platform',
-    description: 'The public, corporates, and charitable organizations use Amanah Charity Foundation to manage their donations and aid programmes in real time.'
+    description: 'The public, corporates, and charitable organizations use Amanah Charitable and Ikhlas Initiative to manage their donations and aid programmes in real time.'
   },
   {
     icon: <FaMobileAlt />,
@@ -45,9 +45,9 @@ const Features = () => {
   return (
     <section className="features">
       <div className="section-header">
-        <h2>Why Choose Amanah Charity Foundation?</h2>
+        <h2>Why Choose Amanah Charitable and Ikhlas Initiative?</h2>
         <p>
-          Whether zakat, sadaqah, or waqf support, give smart with Amanah Charity Foundation!
+          Whether zakat, sadaqah, or waqf support, give smart with Amanah Charitable and Ikhlas Initiative!
           Corporate giving with your own branded aid e-vouchers? Talk to us!
         </p>
       </div>

@@ -75,7 +75,7 @@ const Privacy = () => {
 
         <h2>1. Introduction</h2>
         <p>
-          Amanah Charity Foundation ("we," "our," or "us") is committed to protecting your privacy. 
+          Amanah Charitable and Ikhlas Initiative ("we," "our," or "us") is committed to protecting your privacy. 
           This Privacy Policy explains how we collect, use, disclose, and safeguard your 
           information when you use our platform.
         </p>
@@ -127,7 +127,7 @@ const Privacy = () => {
         <h2>7. Contact Us</h2>
         <p>
           If you have questions about this Privacy Policy, please contact us at 
-          privacy@Amanah Charity Foundation.com.
+          privacy@Amanah Charitable and Ikhlas Initiative.com.
         </p>
       </div>
     </>

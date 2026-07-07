@@ -34,7 +34,7 @@ const Home = () => {
           maxWidth: '500px',
           margin: '0 auto 2rem'
         }}>
-          Join Amanah Charity Foundation today and start your journey of giving.
+          Join Amanah Charitable and Ikhlas Initiative today and start your journey of giving.
         </p>
         <Link
           to="/donateGateway"
