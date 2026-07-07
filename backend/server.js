@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 
@@ -46,22 +45,24 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/payments', paymentRoutes);
 
+// Root check
+app.get('/', (req, res) => {
+  res.json({ status: 'Amanah Charity Foundation API', message: 'Backend is running' });
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Serve React static files
-app.use(express.static(path.join(__dirname, 'build')));
-
-// SPA fallback — serves index.html for all non-API routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'build', 'index.html'));
-});
-
 // API 404 handler
 app.use('/api', (req, res) => {
   res.status(404).json({ message: `API route ${req.method} ${req.url} not found` });
+});
+
+// Catch-all 404 for any other non-API route
+app.use((req, res) => {
+  res.status(404).json({ message: `Route ${req.method} ${req.url} not found` });
 });
 
 // Global error handler
