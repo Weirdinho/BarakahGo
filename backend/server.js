@@ -15,6 +15,8 @@ const vendorRoutes = require('./routes/vendors');
 const adminRoutes = require('./routes/admin');
 const contactRoutes = require('./routes/contact');
 const paymentRoutes = require('./routes/payments');
+const payoutRoutes = require('./routes/payout');
+const webhookRoutes = require('./routes/webhook');
 
 
 connectDB();
@@ -44,6 +46,8 @@ app.use('/api/vendors', vendorRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/payments', paymentRoutes);
+app.use('/api/payouts', payoutRoutes);
+app.use('/api/webhooks', webhookRoutes);
 
 // Root check
 app.get('/', (req, res) => {

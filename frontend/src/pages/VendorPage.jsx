@@ -5,6 +5,7 @@ import {
   FaDollarSign, FaUsers, FaUser, FaCalendarAlt
 } from 'react-icons/fa';
 import api from '../services/api';
+import VendorPayoutSetup from '../components/VendorPayoutSetup';
 
 const VendorPage = () => {
   const { user } = useAuth();
@@ -114,6 +115,7 @@ const VendorPage = () => {
         </div>
 
         <div className="dashboard-grid">
+          <VendorPayoutSetup />
           {/* Redeem Voucher */}
           
 

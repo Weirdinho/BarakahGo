@@ -50,7 +50,13 @@ const vendorSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
-  }
+  },
+  bankDetails: {
+  accountNumber: String,
+  bankCode: String,
+  accountName: String,
+  recipientCode: String // Paystack recipient_code, set once verified
+}
 });
 
 module.exports = mongoose.model('Vendor', vendorSchema);

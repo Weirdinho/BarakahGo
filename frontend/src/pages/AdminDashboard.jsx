@@ -4,8 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import { 
   FaUsers, FaDonate, FaTicketAlt, FaStore, FaClipboardList,
   FaTrash, FaEdit, FaCheck, FaTimes, FaChartBar, FaSignOutAlt,
-  FaBars, FaTimes as FaClose, FaFilter
+  FaBars, FaTimes as FaClose, FaFilter, FaMoneyBillWave
 } from 'react-icons/fa';
+import AdminPayoutsTable from '../components/AdminPayoutsTable';
 import api from '../services/api';
 
 const AdminDashboard = () => {
@@ -105,6 +106,7 @@ const AdminDashboard = () => {
     { id: 'applications', label: 'Applications', icon: <FaClipboardList /> },
     { id: 'vouchers', label: 'Vouchers', icon: <FaTicketAlt /> },
     { id: 'vendors', label: 'Vendors', icon: <FaStore /> },
+    { id: 'payouts', label: 'Payouts', icon: <FaMoneyBillWave /> },
   ];
 
   const closeSidebar = () => setSidebarOpen(false);
@@ -453,7 +455,11 @@ const AdminDashboard = () => {
       </div>
     </div>
   );
-
+  const renderPayouts = () => (
+  <div>
+    <AdminPayoutsTable />
+  </div>
+);
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -1017,6 +1023,7 @@ const AdminDashboard = () => {
             {activeTab === 'applications' && renderApplications()}
             {activeTab === 'vouchers' && renderVouchers()}
             {activeTab === 'vendors' && renderVendors()}
+            {activeTab === 'payouts' && renderPayouts()}
           </div>
         </main>
       </div>
