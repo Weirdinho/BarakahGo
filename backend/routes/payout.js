@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 
-const { auth, isAdmin } = require('../middleware/auth');
+const { auth, adminOnly } = require('../middleware/auth');
 const payoutController = require('../controllers/payoutController');
 
 // Vendor routes
@@ -17,7 +17,7 @@ router.post('/setup-recipient', auth, payoutController.setupRecipient);
 router.post(
   '/vouchers/:voucherId',
   auth,
-  isAdmin,
+  adminOnly,
   payoutController.payoutVoucher
 );
 
