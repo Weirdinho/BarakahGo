@@ -287,7 +287,7 @@ const HowItWorksPage = () => {
       `}</style>
 
       <section className="page-hero">
-        <h1>How Amanah Charitable and Ikhlas Initiative Works</h1>
+        <h1>How Amanah and Ikhlas Initiative Works</h1>
         <p>From your generous donation to a beneficiary's essential needs — see the journey every contribution takes.</p>
       </section>
 

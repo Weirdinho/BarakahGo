@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
-  FaUsers, FaDonate, FaTicketAlt, FaStore, FaClipboardList,
+  FaUsers, FaDonate, FaTicketAlt, FaClipboardList,
   FaTrash, FaEdit, FaCheck, FaTimes, FaChartBar, FaSignOutAlt,
   FaBars, FaTimes as FaClose, FaFilter, FaMoneyBillWave
 } from 'react-icons/fa';
@@ -21,7 +21,6 @@ const AdminDashboard = () => {
   const [donations, setDonations] = useState([]);
   const [applications, setApplications] = useState([]);
   const [vouchers, setVouchers] = useState([]);
-  const [pendingVendors, setPendingVendors] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // User filter state
@@ -35,13 +34,12 @@ const AdminDashboard = () => {
   const fetchAllData = async () => {
     setLoading(true);
     try {
-      const [statsRes, usersRes, donationsRes, appsRes, vouchersRes, vendorsRes] = await Promise.all([
+      const [statsRes, usersRes, donationsRes, appsRes, vouchersRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/users'),
         api.get('/admin/donations'),
         api.get('/admin/applications'),
-        api.get('/admin/vouchers'),
-        api.get('/admin/vendors/pending')
+        api.get('/admin/vouchers')
       ]);
 
       setStats(statsRes.data);
@@ -49,7 +47,6 @@ const AdminDashboard = () => {
       setDonations(donationsRes.data);
       setApplications(appsRes.data);
       setVouchers(vouchersRes.data);
-      setPendingVendors(vendorsRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -85,15 +82,6 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleApproveVendor = async (id) => {
-    try {
-      await api.put(`/vendors/${id}/approve`);
-      setPendingVendors(vendors => vendors.filter(v => v._id !== id));
-    } catch (err) {
-      alert('Failed to approve vendor');
-    }
-  };
-
   const handleLogout = () => {
     logout();
     navigate('/login');
@@ -105,7 +93,6 @@ const AdminDashboard = () => {
     { id: 'donations', label: 'Donations', icon: <FaDonate /> },
     { id: 'applications', label: 'Applications', icon: <FaClipboardList /> },
     { id: 'vouchers', label: 'Vouchers', icon: <FaTicketAlt /> },
-    { id: 'vendors', label: 'Vendors', icon: <FaStore /> },
     { id: 'payouts', label: 'Payouts', icon: <FaMoneyBillWave /> },
   ];
 
@@ -126,7 +113,6 @@ const AdminDashboard = () => {
     donor: users.filter(u => u.role === 'donor').length,
     corporate: users.filter(u => u.role === 'corporate').length,
     beneficiary: users.filter(u => u.role === 'beneficiary').length,
-    vendor: users.filter(u => u.role === 'vendor').length,
     admin: users.filter(u => u.role === 'admin').length,
   };
 
@@ -215,7 +201,6 @@ const AdminDashboard = () => {
               { id: 'donor', label: 'Donors', count: roleCounts.donor },
               { id: 'corporate', label: 'Corporate', count: roleCounts.corporate },
               { id: 'beneficiary', label: 'Beneficiaries', count: roleCounts.beneficiary },
-              { id: 'vendor', label: 'Vendors', count: roleCounts.vendor },
               { id: 'admin', label: 'Admins', count: roleCounts.admin },
             ].map(role => (
               <button
@@ -277,7 +262,6 @@ const AdminDashboard = () => {
                       <option value="donor">Donor</option>
                       <option value="corporate">Corporate</option>
                       <option value="beneficiary">Beneficiary</option>
-                      <option value="vendor">Vendor</option>
                       <option value="admin">Admin</option>
                     </select>
                   </td>
@@ -422,44 +406,12 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const renderVendors = () => (
+  const renderPayouts = () => (
     <div>
-      <h3 style={{ marginBottom: '1rem' }}>Pending Vendor Approvals ({pendingVendors.length})</h3>
-      <div className="admin-table-container">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Phone</th>
-              <th>Categories</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pendingVendors.map(v => (
-              <tr key={v._id}>
-                <td>{v.name}</td>
-                <td>{v.email}</td>
-                <td>{v.phone}</td>
-                <td>{v.categories?.join(', ')}</td>
-                <td>
-                  <button onClick={() => handleApproveVendor(v._id)} className="action-btn approve">
-                    <FaCheck /> Approve
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <AdminPayoutsTable />
     </div>
   );
-  const renderPayouts = () => (
-  <div>
-    <AdminPayoutsTable />
-  </div>
-);
+
   if (loading) {
     return <div className="loading">Loading...</div>;
   }
@@ -1022,7 +974,6 @@ const AdminDashboard = () => {
             {activeTab === 'donations' && renderDonations()}
             {activeTab === 'applications' && renderApplications()}
             {activeTab === 'vouchers' && renderVouchers()}
-            {activeTab === 'vendors' && renderVendors()}
             {activeTab === 'payouts' && renderPayouts()}
           </div>
         </main>

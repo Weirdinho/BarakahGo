@@ -7,11 +7,11 @@ import ScrollToTop from './components/ScrollToTop';
 import Home from './pages/Home';
 import Donate from './pages/Donate';
 import Dashboard from './pages/Dashboard';
-import Vendors from './pages/Vendors';
+
 import Login from './pages/Login';
 import AdminDashboard from './pages/AdminDashboard';
 import BeneficiaryPage from './pages/BeneficiaryPage';
-import VendorPage from './pages/VendorPage';
+
 import About from './pages/About';
 import Contact from './pages/Contact';
 import DonateGateway from './pages/DonateGateway';
@@ -148,7 +148,7 @@ const AppContent = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="/vendors" element={<Vendors />} />
+
       </Routes>
     </Layout>
   );

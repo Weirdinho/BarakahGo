@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   FaHandHoldingHeart, FaClipboardList, FaTicketAlt, 
   FaCheckCircle, FaClock, FaTimesCircle, FaPlus, FaCopy,
-  FaPaperPlane, FaStore, FaCheck
+  FaPaperPlane, FaStore
 } from 'react-icons/fa';
 import api from '../services/api';
 
@@ -26,14 +26,19 @@ const BeneficiaryPage = () => {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
+  // Bank list for the redeem form
+  const [banks, setBanks] = useState([]);
+
   // Redeem modal state
-  const [redeemModal, setRedeemModal] = useState({ open: false, voucher: null, applicationId: null });
-  const [redeemForm, setRedeemForm] = useState({ vendorEmail: '', amount: '' });
+  const [redeemModal, setRedeemModal] = useState({ open: false, voucher: null });
+  const [redeemForm, setRedeemForm] = useState({ bankCode: '', accountNumber: '', accountName: '', amount: '' });
+  const [verifying, setVerifying] = useState(false);
   const [redeeming, setRedeeming] = useState(false);
   const [redeemMessage, setRedeemMessage] = useState('');
 
   useEffect(() => {
     fetchData();
+    fetchBanks();
   }, []);
 
   const fetchData = async () => {
@@ -44,6 +49,15 @@ const BeneficiaryPage = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchBanks = async () => {
+    try {
+      const res = await api.get('/payouts/banks');
+      setBanks(res.data);
+    } catch (err) {
+      console.error('Fetch banks error:', err);
     }
   };
 
@@ -69,24 +83,53 @@ const BeneficiaryPage = () => {
   };
 
   // Open redeem modal
-  const openRedeemModal = (voucher, applicationId) => {
-    setRedeemModal({ open: true, voucher, applicationId });
-    setRedeemForm({ vendorEmail: '', amount: '' });
+  const openRedeemModal = (voucher) => {
+    setRedeemModal({ open: true, voucher });
+    setRedeemForm({ bankCode: '', accountNumber: '', accountName: '', amount: '' });
     setRedeemMessage('');
   };
 
   // Close redeem modal
   const closeRedeemModal = () => {
-    setRedeemModal({ open: false, voucher: null, applicationId: null });
-    setRedeemForm({ vendorEmail: '', amount: '' });
+    setRedeemModal({ open: false, voucher: null });
+    setRedeemForm({ bankCode: '', accountNumber: '', accountName: '', amount: '' });
     setRedeemMessage('');
   };
 
-  // Handle automatic redemption
-  const handleAutoRedeem = async (e) => {
+  // Verify the beneficiary's own account before redeeming
+  const handleVerifyAccount = async () => {
+    if (!redeemForm.bankCode || redeemForm.accountNumber.length < 10) {
+      setRedeemMessage('Select a bank and enter a valid 10-digit account number');
+      return;
+    }
+
+    setVerifying(true);
+    setRedeemMessage('');
+
+    try {
+      const res = await api.post('/payouts/verify-account', {
+        accountNumber: redeemForm.accountNumber,
+        bankCode: redeemForm.bankCode
+      });
+      setRedeemForm(prev => ({ ...prev, accountName: res.data.accountName }));
+    } catch (err) {
+      setRedeemMessage(err.response?.data?.message || 'Could not verify account');
+    } finally {
+      setVerifying(false);
+    }
+  };
+
+  // Handle redemption — pays out directly to the beneficiary's verified account
+  const handleRedeem = async (e) => {
     e.preventDefault();
-    if (!redeemForm.vendorEmail || !redeemForm.amount) {
-      setRedeemMessage('Please enter vendor email and amount');
+
+    if (!redeemForm.accountName) {
+      setRedeemMessage('Please verify your account first');
+      return;
+    }
+
+    if (!redeemForm.amount) {
+      setRedeemMessage('Please enter an amount');
       return;
     }
 
@@ -106,20 +149,20 @@ const BeneficiaryPage = () => {
     setRedeemMessage('');
 
     try {
-      const response = await api.post('/vouchers/auto-redeem', {
-        voucherCode: redeemModal.voucher.code,
-        vendorEmail: redeemForm.vendorEmail,
-        amount: amount
+      const response = await api.post(`/vouchers/${redeemModal.voucher.code}/redeem`, {
+        bankCode: redeemForm.bankCode,
+        accountNumber: redeemForm.accountNumber,
+        accountName: redeemForm.accountName,
+        amount
       });
 
       setRedeemMessage(response.data.message);
-      setRedeemForm({ vendorEmail: '', amount: '' });
       fetchData(); // Refresh data to show updated voucher status
 
-      // Close modal after 2 seconds on success
+      // Close modal after 2.5 seconds on success
       setTimeout(() => {
         closeRedeemModal();
-      }, 2000);
+      }, 2500);
     } catch (err) {
       setRedeemMessage(err.response?.data?.message || 'Failed to redeem voucher');
     } finally {
@@ -174,6 +217,8 @@ const BeneficiaryPage = () => {
           max-width: 420px;
           box-shadow: 0 20px 60px rgba(0,0,0,0.3);
           animation: slideUp 0.3s ease-out;
+          max-height: 90vh;
+          overflow-y: auto;
         }
         .redeem-modal h3 {
           margin-bottom: 0.5rem;
@@ -195,7 +240,8 @@ const BeneficiaryPage = () => {
           font-weight: 600;
           color: #2d3436;
         }
-        .redeem-form-group input {
+        .redeem-form-group input,
+        .redeem-form-group select {
           width: 100%;
           padding: 0.75rem 1rem;
           border: 2px solid #dfe6e9;
@@ -204,7 +250,8 @@ const BeneficiaryPage = () => {
           outline: none;
           transition: border-color 0.2s ease;
         }
-        .redeem-form-group input:focus {
+        .redeem-form-group input:focus,
+        .redeem-form-group select:focus {
           border-color: #1a5f2a;
         }
         .redeem-balance {
@@ -244,13 +291,34 @@ const BeneficiaryPage = () => {
           cursor: pointer;
           transition: all 0.2s ease;
         }
+        .btn-verify-account {
+          width: 100%;
+          padding: 0.75rem;
+          border-radius: 10px;
+          font-size: 0.9rem;
+          font-weight: 600;
+          cursor: pointer;
+          background: #f1f5f9;
+          color: #1a5f2a;
+          border: 2px solid #1a5f2a;
+          margin-bottom: 1rem;
+          transition: all 0.2s ease;
+        }
+        .btn-verify-account:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
         .btn-redeem-submit {
           background: #1a5f2a;
           color: white;
           border: none;
         }
-        .btn-redeem-submit:hover {
+        .btn-redeem-submit:hover:not(:disabled) {
           background: #2d8a3e;
+        }
+        .btn-redeem-submit:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
         }
         .btn-redeem-cancel {
           background: #f1f5f9;
@@ -472,13 +540,13 @@ const BeneficiaryPage = () => {
                       )}
                     </div>
                     
-                    {/* Send to Vendor Button */}
+                    {/* Redeem Button — pays out directly to the beneficiary's own account */}
                     {app.voucher.status === 'active' && (
                       <button 
                         className="btn-send-vendor"
-                        onClick={() => openRedeemModal(app.voucher, app._id)}
+                        onClick={() => openRedeemModal(app.voucher)}
                       >
-                        <FaPaperPlane /> Send to Vendor for Redemption
+                        <FaPaperPlane /> Redeem & Get Paid
                       </button>
                     )}
 
@@ -514,8 +582,8 @@ const BeneficiaryPage = () => {
           if (e.target === e.currentTarget) closeRedeemModal();
         }}>
           <div className="redeem-modal">
-            <h3><FaStore /> Send to Vendor</h3>
-            <p>Enter the vendor's email and the amount to redeem from your voucher.</p>
+            <h3><FaStore /> Redeem Voucher</h3>
+            <p>Enter your bank account details — the money is sent directly to you.</p>
             
             <div className="redeem-balance">
               <strong>Voucher:</strong> {redeemModal.voucher.code}<br />
@@ -523,22 +591,57 @@ const BeneficiaryPage = () => {
             </div>
 
             {redeemMessage && (
-              <div className={`redeem-message ${redeemMessage.includes('success') ? 'success' : 'error'}`}>
+              <div className={`redeem-message ${redeemForm.accountName || redeemMessage.toLowerCase().includes('way') ? 'success' : 'error'}`}>
                 {redeemMessage}
               </div>
             )}
 
-            <form onSubmit={handleAutoRedeem}>
+            <form onSubmit={handleRedeem}>
               <div className="redeem-form-group">
-                <label>Vendor Email</label>
+                <label>Bank</label>
+                <select
+                  value={redeemForm.bankCode}
+                  onChange={(e) => setRedeemForm({ ...redeemForm, bankCode: e.target.value, accountName: '' })}
+                  required
+                >
+                  <option value="">Select your bank</option>
+                  {banks.map(b => (
+                    <option key={b.code} value={b.code}>{b.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="redeem-form-group">
+                <label>Account Number</label>
                 <input
-                  type="email"
-                  placeholder="vendor@example.com"
-                  value={redeemForm.vendorEmail}
-                  onChange={(e) => setRedeemForm({...redeemForm, vendorEmail: e.target.value})}
+                  type="text"
+                  placeholder="0123456789"
+                  value={redeemForm.accountNumber}
+                  onChange={(e) => setRedeemForm({
+                    ...redeemForm,
+                    accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10),
+                    accountName: ''
+                  })}
+                  maxLength={10}
                   required
                 />
               </div>
+
+              {!redeemForm.accountName ? (
+                <button
+                  type="button"
+                  className="btn-verify-account"
+                  onClick={handleVerifyAccount}
+                  disabled={verifying || !redeemForm.bankCode || redeemForm.accountNumber.length < 10}
+                >
+                  {verifying ? 'Verifying...' : 'Verify Account'}
+                </button>
+              ) : (
+                <div className="redeem-balance">
+                  Account name: <strong>{redeemForm.accountName}</strong>
+                </div>
+              )}
+
               <div className="redeem-form-group">
                 <label>Amount to Redeem (₦)</label>
                 <input
@@ -551,13 +654,14 @@ const BeneficiaryPage = () => {
                   required
                 />
               </div>
+
               <div className="redeem-actions">
                 <button 
                   type="submit" 
                   className="btn-redeem-submit"
-                  disabled={redeeming}
+                  disabled={redeeming || !redeemForm.accountName}
                 >
-                  {redeeming ? 'Processing...' : <><FaPaperPlane /> Send & Redeem</>}
+                  {redeeming ? 'Processing...' : <><FaPaperPlane /> Redeem</>}
                 </button>
                 <button 
                   type="button" 

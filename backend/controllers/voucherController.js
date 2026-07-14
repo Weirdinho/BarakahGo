@@ -1,5 +1,13 @@
+const axios = require('axios');
 const Voucher = require('../models/Voucher');
-const User = require('../models/User');
+
+const paystack = axios.create({
+  baseURL: 'https://api.paystack.co',
+  headers: {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${process.env.PAYSTACK_SECRET_KEY}`
+  }
+});
 
 // @desc    Get beneficiary's vouchers
 // @route   GET /api/vouchers
@@ -15,24 +23,18 @@ exports.getMyVouchers = async (req, res) => {
   }
 };
 
-// @desc    Auto-redeem voucher by beneficiary sending to vendor
-// @route   POST /api/vouchers/auto-redeem
-exports.autoRedeem = async (req, res) => {
+// @desc    Beneficiary redeems their own voucher — money is sent directly
+//          to the bank account they provide, via Paystack Transfers
+// @route   POST /api/vouchers/:code/redeem
+exports.redeemVoucher = async (req, res) => {
   try {
-    const { voucherCode, vendorEmail, amount } = req.body;
+    const { bankCode, accountNumber, accountName, amount } = req.body;
 
-    if (!voucherCode || !vendorEmail || !amount) {
-      return res.status(400).json({ message: 'Voucher code, vendor email, and amount are required' });
+    if (!bankCode || !accountNumber || !accountName || !amount) {
+      return res.status(400).json({ message: 'Bank details and amount are required' });
     }
 
-    // Find vendor by email
-    const vendor = await User.findOne({ email: vendorEmail.toLowerCase().trim(), role: 'vendor' });
-    if (!vendor) {
-      return res.status(404).json({ message: 'Vendor not found with that email' });
-    }
-
-    // Find voucher
-    const voucher = await Voucher.findOne({ code: voucherCode.toUpperCase() });
+    const voucher = await Voucher.findOne({ code: req.params.code.toUpperCase() });
     if (!voucher) {
       return res.status(404).json({ message: 'Voucher not found' });
     }
@@ -50,14 +52,53 @@ exports.autoRedeem = async (req, res) => {
     const remaining = voucher.amount - (voucher.redeemedAmount || 0);
 
     if (redeemAmount > remaining) {
-      return res.status(400).json({ 
-        message: `Only ₦${remaining.toLocaleString()} remaining on this voucher` 
+      return res.status(400).json({
+        message: `Only ₦${remaining.toLocaleString()} remaining on this voucher`
       });
     }
 
-    // Process redemption
+    // Create (or reuse) a Paystack transfer recipient for this bank account
+    let recipientCode;
+    try {
+      const recipientRes = await paystack.post('/transferrecipient', {
+        type: 'nuban',
+        name: accountName,
+        account_number: accountNumber,
+        bank_code: bankCode,
+        currency: 'NGN'
+      });
+      recipientCode = recipientRes.data.data.recipient_code;
+    } catch (err) {
+      console.error('CREATE RECIPIENT ERROR:', err.response?.data || err.message);
+      return res.status(400).json({
+        message: err.response?.data?.message || 'Could not verify your bank account'
+      });
+    }
+
+    // Initiate the transfer
+    let transferData;
+    try {
+      const transferRes = await paystack.post('/transfer', {
+        source: 'balance',
+        amount: Math.round(redeemAmount * 100), // Paystack expects kobo
+        recipient: recipientCode,
+        reason: `Voucher redemption ${voucher.code}`,
+        reference: `redeem-${voucher._id}-${Date.now()}`
+      });
+      transferData = transferRes.data.data;
+    } catch (err) {
+      console.error('TRANSFER ERROR:', err.response?.data || err.message);
+      return res.status(400).json({
+        message: err.response?.data?.message || 'Failed to send payout'
+      });
+    }
+
+    // Record the redemption — payoutStatus starts 'pending' until the
+    // transfer.success webhook confirms the money actually landed
     voucher.redeemedAmount = (voucher.redeemedAmount || 0) + redeemAmount;
-    voucher.vendor = vendor._id;
+    voucher.payoutStatus = 'pending';
+    voucher.transferCode = transferData.transfer_code;
+    voucher.bankDetails = { bankCode, accountNumber, accountName };
 
     if (voucher.redeemedAmount >= voucher.amount) {
       voucher.status = 'redeemed';
@@ -66,103 +107,15 @@ exports.autoRedeem = async (req, res) => {
 
     await voucher.save();
 
-    res.json({ 
+    res.json({
       success: true,
-      message: `Voucher redeemed successfully! ₦${redeemAmount.toLocaleString()} sent to ${vendor.name || vendorEmail}`,
+      message: `₦${redeemAmount.toLocaleString()} is on its way to ${accountName}`,
       remaining: voucher.amount - voucher.redeemedAmount
     });
   } catch (error) {
-    console.error('AUTO REDEEM ERROR:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
-  }
-};
-
-// @desc    Lookup voucher by code (for vendor)
-// @route   GET /api/vouchers/:code
-exports.lookupVoucher = async (req, res) => {
-  try {
-    const voucher = await Voucher.findOne({ code: req.params.code.toUpperCase() })
-      .populate('beneficiary', 'name email phone')
-      .populate('application', 'category');
-
-    if (!voucher) {
-      return res.status(404).json({ message: 'Voucher not found' });
-    }
-
-    if (voucher.status === 'redeemed') {
-      return res.status(400).json({ message: 'Voucher has been fully redeemed' });
-    }
-
-    if (voucher.status === 'expired') {
-      return res.status(400).json({ message: 'Voucher has expired' });
-    }
-
-    res.json(voucher);
-  } catch (error) {
-    console.error('LOOKUP VOUCHER ERROR:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// @desc    Redeem voucher (vendor only)
-// @route   POST /api/vouchers/:code/redeem
-exports.redeemVoucher = async (req, res) => {
-  try {
-    const { amount } = req.body;
-    const voucher = await Voucher.findOne({ code: req.params.code.toUpperCase() });
-
-    if (!voucher) {
-      return res.status(404).json({ message: 'Voucher not found' });
-    }
-
-    if (voucher.status === 'redeemed') {
-      return res.status(400).json({ message: 'Voucher already fully redeemed' });
-    }
-
-    const remaining = voucher.amount - (voucher.redeemedAmount || 0);
-    if (amount > remaining) {
-      return res.status(400).json({ 
-        message: `Only ₦${remaining.toLocaleString()} remaining on this voucher` 
-      });
-    }
-
-    voucher.redeemedAmount = (voucher.redeemedAmount || 0) + parseFloat(amount);
-    voucher.vendor = req.user.id;
-
-    if (voucher.redeemedAmount >= voucher.amount) {
-      voucher.status = 'redeemed';
-      voucher.redeemedAt = new Date();
-    }
-
-    await voucher.save();
-
-    res.json({ 
-      message: 'Voucher redeemed successfully',
-      remaining: voucher.amount - voucher.redeemedAmount
+    console.error('REDEEM VOUCHER ERROR:', error.response?.data || error.message);
+    res.status(500).json({
+      message: error.response?.data?.message || 'Server error'
     });
-  } catch (error) {
-    console.error('REDEEM VOUCHER ERROR:', error);
-    res.status(500).json({ message: 'Server error' });
   }
 };
-
-// @desc    Get vendor's redemptions
-// @route   GET /api/vendors/redemptions
-exports.getVendorRedemptions = async (req, res) => {
-  try {
-    const redemptions = await Voucher.find({ 
-      vendor: req.user.id,
-      status: 'redeemed'
-    })
-    .populate('beneficiary', 'name')
-    .sort({ redeemedAt: -1 });
-
-    res.json(redemptions);
-  } catch (error) {
-    console.error('GET VENDOR REDEMPTIONS ERROR:', error);
-    res.status(500).json({ message: 'Server error' });
-  }
-};
-
-// Debug log
-console.log('Voucher Controller exports:', Object.keys(exports));

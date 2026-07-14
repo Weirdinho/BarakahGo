@@ -51,7 +51,7 @@ app.use('/api/webhooks', webhookRoutes);
 
 // Root check
 app.get('/', (req, res) => {
-  res.json({ status: 'Amanah Charity Foundation API', message: 'Backend is running' });
+  res.json({ status: 'Amanah and Ikhlas Initiative API', message: 'Backend is running' });
 });
 
 // Health check

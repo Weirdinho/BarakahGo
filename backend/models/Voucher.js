@@ -37,9 +37,19 @@ const voucherSchema = new mongoose.Schema({
   redeemedAt: {
     type: Date
   },
-  vendor: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
+  // Payout tracking — money goes straight to the beneficiary's own bank account
+  payoutStatus: {
+    type: String,
+    enum: ['none', 'pending', 'paid', 'failed'],
+    default: 'none'
+  },
+  transferCode: {
+    type: String
+  },
+  bankDetails: {
+    bankCode: String,
+    accountNumber: String,
+    accountName: String
   }
 }, {
   timestamps: true

@@ -79,7 +79,7 @@ const Partnerships = () => {
       <div className="page-content">
         <h2>Why Partner With Us?</h2>
         <p>
-          Amanah Charitable and Ikhlas Initiative partners with corporations, NGOs, government agencies, and 
+          Amanah and Ikhlas Initiative partners with corporations, NGOs, government agencies, and 
           retail networks to create a seamless ecosystem for aid distribution. 
           Together, we can reach more people, more efficiently.
         </p>
@@ -111,7 +111,7 @@ const Partnerships = () => {
         <div className="partner-type">
           <h3>Government & Institutional Partners</h3>
           <p>
-            Integrate Amanah Charitable and Ikhlas Initiative into social welfare programs for transparent, 
+            Integrate Amanah and Ikhlas Initiative into social welfare programs for transparent, 
             efficient distribution of subsidies and emergency relief.
           </p>
         </div>
@@ -119,7 +119,7 @@ const Partnerships = () => {
         <div className="contact-box">
           <h3>Interested in Partnering?</h3>
           <p>
-            Reach out to our partnerships team at <strong>partnerships@Amanah Charitable and Ikhlas Initiative.com</strong>
+            Reach out to our partnerships team at <strong>partnerships@Amanah and Ikhlas Initiative.com</strong>
           </p>
         </div>
       </div>
