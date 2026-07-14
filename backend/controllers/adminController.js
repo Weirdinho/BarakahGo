@@ -205,7 +205,6 @@ exports.getVouchers = async (req, res) => {
     const vouchers = await Voucher.find()
       .populate('beneficiary', 'name email')
       .populate('application', 'category reason')
-      .populate('vendor', 'name')
       .sort({ createdAt: -1 });
     res.json(vouchers);
   } catch (error) {
