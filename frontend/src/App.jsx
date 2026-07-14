@@ -136,11 +136,7 @@ const AppContent = () => {
           </ProtectedRoute>
         } />
         
-        <Route path="/vendor" element={
-          <ProtectedRoute allowedRoles={['vendor']}>
-            <VendorPage />
-          </ProtectedRoute>
-        } />
+        
         
         <Route path="/dashboard" element={
           <ProtectedRoute allowedRoles={['donor', 'corporate']}>
