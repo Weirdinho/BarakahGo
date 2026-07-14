@@ -36,10 +36,14 @@ exports.getStats = async (req, res) => {
 // @route   GET /api/admin/users
 exports.getUsers = async (req, res) => {
   try {
+    console.log('🔍 req.user from auth middleware:', req.user);
+    
     const users = await User.find().select('-password').sort({ createdAt: -1 });
+    console.log('👥 Users found:', users.length);
+    
     res.json(users);
   } catch (error) {
-    console.error('GET USERS ERROR:', error);
+    console.error('❌ GET USERS ERROR:', error);
     res.status(500).json({ message: 'Server error' });
   }
 };

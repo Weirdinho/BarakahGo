@@ -24,7 +24,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['donor', 'beneficiary', 'corporate', 'admin'],
+    enum: ['donor', 'beneficiary', 'corporate'],
     default: 'donor'
   },
   companyName: {
@@ -62,15 +62,16 @@ userSchema.methods.comparePassword = async function(candidatePassword) {
   return this.password === candidatePassword;
 };
 
-// Remove password from JSON output
-userSchema.methods.toJSON = function() {
-  const user = this.toObject();
-  delete user.password;
-  delete user.verificationToken;
-  delete user.verificationTokenExpiry;
-  delete user.resetPasswordToken;
-  delete user.resetPasswordExpiry;
-  return user;
-};
+userSchema.set('toJSON', {
+  transform: function(doc, ret) {
+    delete ret.password;
+    delete ret.verificationToken;
+    delete ret.verificationTokenExpiry;
+    delete ret.resetPasswordToken;
+    delete ret.resetPasswordExpiry;
+    delete ret.__v;
+    return ret;
+  }
+});
 
 module.exports = mongoose.model('User', userSchema);
