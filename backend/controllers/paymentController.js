@@ -40,7 +40,7 @@ const initializePayment = async (req, res) => {
           {
             display_name: "Platform",
             variable_name: "platform",
-            value: "Amanah and Ikhlas Initiative"
+            value: "Amanah and Ikhlas Charitable Initiative"
           }
         ]
       },

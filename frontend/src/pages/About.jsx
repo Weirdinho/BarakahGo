@@ -102,14 +102,14 @@ const About = () => {
       `}</style>
 
       <section className="page-hero">
-        <h1>About Amanah and Ikhlas Initiative</h1>
+        <h1>About Amanah and Ikhlas Charitable Initiative</h1>
         <p>Smart giving for a better world. We're on a mission to make aid distribution transparent, efficient, and accessible to everyone.</p>
       </section>
 
       <div className="page-content">
         <h2>Our Story</h2>
         <p>
-          Amanah and Ikhlas Initiative was founded with a simple belief: everyone deserves access to help when they need it most. 
+          Amanah and Ikhlas Charitable Initiative was founded with a simple belief: everyone deserves access to help when they need it most. 
           In a world where billions of dollars in aid go to waste due to inefficiency, corruption, and lack of transparency, 
           we saw an opportunity to do things differently.
         </p>

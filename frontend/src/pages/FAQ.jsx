@@ -2,8 +2,8 @@ import React, { useState } from 'react';
 
 const faqs = [
   {
-    question: 'What is Amanah and Ikhlas Initiative?',
-    answer: 'Amanah and Ikhlas Initiative is a smart giving e-voucher platform that enables transparent, efficient aid distribution. Donors contribute funds that are converted to digital vouchers, which beneficiaries can redeem at approved vendors.'
+    question: 'What is Amanah and Ikhlas Charitable Initiative?',
+    answer: 'Amanah and Ikhlas Charitable Initiative is a smart giving e-voucher platform that enables transparent, efficient aid distribution. Donors contribute funds that are converted to digital vouchers, which beneficiaries can redeem at approved vendors.'
   },
   {
     question: 'How do I make a donation?',
@@ -118,7 +118,7 @@ const FAQ = () => {
 
       <section className="page-hero">
         <h1>Frequently Asked Questions</h1>
-        <p>Find answers to common questions about Amanah and Ikhlas Initiative.</p>
+        <p>Find answers to common questions about Amanah and Ikhlas Charitable Initiative.</p>
       </section>
 
       <div className="page-content">

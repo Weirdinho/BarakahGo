@@ -420,7 +420,7 @@ const PaymentVerify = () => {
                 <div ref={receiptRef}>
                   <div className="receipt-header">
                     <div className="receipt-logo">ACF</div>
-                    <div className="receipt-title">Amanah and Ikhlas Initiative</div>
+                    <div className="receipt-title">Amanah and Ikhlas Charitable Initiative</div>
                     <div className="receipt-subtitle">Official Donation Receipt</div>
                     <div className="receipt-status">Payment Successful</div>
                   </div>
@@ -447,7 +447,7 @@ const PaymentVerify = () => {
                   </div>
                   
                   <div className="receipt-footer">
-                    <div className="brand">Amanah and Ikhlas Initiative</div>
+                    <div className="brand">Amanah and Ikhlas Charitable Initiative</div>
                     <p>Thank you for your generosity!</p>
                     <p>For questions, contact us at support@barakahgo.com</p>
                     <p style={{marginTop:'8px',fontSize:'11px',color:'#b2bec3'}}>This is an official receipt for your donation.</p>

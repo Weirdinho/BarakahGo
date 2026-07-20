@@ -107,7 +107,7 @@ const Footer = () => {
       <footer className="footer">
         <div className="footer-inner">
           <div className="footer-brand">
-            <h3>Amanah and Ikhlas Initiative</h3>
+            <h3>Amanah and Ikhlas Charitable Initiative</h3>
             <p>
               Smart Giving E-Voucher Platform. Experience a smarter, targeted way of giving.
               Aid access for everyone, even the unbanked and underserved.
@@ -123,7 +123,7 @@ const Footer = () => {
           <div className="footer-links">
             <h4>About Us</h4>
             <ul>
-              <li><Link to="/about">Amanah and Ikhlas Initiative-Smart Giving</Link></li>
+              <li><Link to="/about">Amanah and Ikhlas Charitable Initiative-Smart Giving</Link></li>
               <li><Link to="/contact">Contact Us</Link></li>
               <li><Link to="/partnerships">Partnerships</Link></li>
               <li><a href="https://prof-mustapha-abubakar-e-library.netlify.app">Waqf Link</a></li>
@@ -142,7 +142,7 @@ const Footer = () => {
         </div>
 
         <div className="footer-bottom">
-          <p>© 2026 Amanah and Ikhlas Initiative. All rights reserved.</p>
+          <p>© 2026 Amanah and Ikhlas Charitable Initiative. All rights reserved.</p>
         </div>
       </footer>
     </>

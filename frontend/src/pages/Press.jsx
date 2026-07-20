@@ -3,19 +3,19 @@ import React from 'react';
 const pressReleases = [
   {
     date: 'May 15, 2024',
-    title: 'Amanah and Ikhlas Initiative Raises $2M Seed Round to Expand E-Voucher Platform Across Africa',
+    title: 'Amanah and Ikhlas Charitable Initiative Raises $2M Seed Round to Expand E-Voucher Platform Across Africa',
     source: 'TechCrunch',
     excerpt: 'The Lagos-based fintech startup plans to use the funding to expand its operations to 5 new countries by 2025.'
   },
   {
     date: 'April 3, 2024',
-    title: 'How Amanah and Ikhlas Initiative is Revolutionizing Aid Distribution in Nigeria',
+    title: 'How Amanah and Ikhlas Charitable Initiative is Revolutionizing Aid Distribution in Nigeria',
     source: 'TechCabal',
     excerpt: 'An in-depth look at how the platform has helped over 50,000 families access food and healthcare vouchers.'
   },
   {
     date: 'March 12, 2024',
-    title: 'Amanah and Ikhlas Initiative Partners with AEON BiG to Expand Vendor Network',
+    title: 'Amanah and Ikhlas Charitable Initiative Partners with AEON BiG to Expand Vendor Network',
     source: 'BusinessDay',
     excerpt: 'The partnership will enable beneficiaries to redeem vouchers at over 50 retail locations nationwide.'
   },
@@ -159,7 +159,7 @@ const Press = () => {
 
       <section className="page-hero">
         <h1>Press & Media</h1>
-        <p>Latest news, press releases, and media resources about Amanah and Ikhlas Initiative.</p>
+        <p>Latest news, press releases, and media resources about Amanah and Ikhlas Charitable Initiative.</p>
       </section>
 
       <div className="page-content">
@@ -188,7 +188,7 @@ const Press = () => {
           <h3>Media Inquiries</h3>
           <p>
             For press inquiries, interview requests, or speaking opportunities, 
-            please contact our communications team at <strong>press@Amanah and Ikhlas Initiative.com</strong>.
+            please contact our communications team at <strong>press@Amanah and Ikhlas Charitable Initiative.com</strong>.
           </p>
         </div>
       </div>

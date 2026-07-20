@@ -153,7 +153,7 @@ const DonateGateway = () => {
           
           <h1 className="gateway-title">Make a Donation</h1>
           <p className="gateway-subtitle">
-            Choose how you'd like to proceed with your contribution to Amanah and Ikhlas Initiative.
+            Choose how you'd like to proceed with your contribution to Amanah and Ikhlas Charitable Initiative.
           </p>
 
           <div className="gateway-options">

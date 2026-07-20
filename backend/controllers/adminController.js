@@ -146,11 +146,11 @@ exports.updateApplication = async (req, res) => {
           const msg = {
             to: applicant.email,
             from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
-            subject: 'Aid Application Approved - Amanah and Ikhlas Initiative',
+            subject: 'Aid Application Approved - Amanah and Ikhlas Charitable Initiative',
             html: `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 <div style="background: #1a5f2a; padding: 20px; text-align: center;">
-                  <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Initiative</h1>
+                  <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Charitable Initiative</h1>
                 </div>
                 <div style="padding: 30px; background: #f9f9f9;">
                   <h2 style="color: #2d3436;">Application Approved! 🎉</h2>
@@ -174,7 +174,7 @@ exports.updateApplication = async (req, res) => {
                   </p>
                   <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
                   <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
-                    Amanah and Ikhlas Initiative<br>
+                    Amanah and Ikhlas Charitable Initiative<br>
                     Making a difference, one donation at a time.
                   </p>
                 </div>
