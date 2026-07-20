@@ -567,7 +567,7 @@ const Navbar = () => {
             </li>
 
             {/* Role-based Links - Hidden when on dashboard */}
-            {user?.role === 'admin' && !isOnDashboard() && (
+            {/* {user?.role === 'admin' && !isOnDashboard() && (
               <li>
                 <Link 
                   to="/admin" 
@@ -601,7 +601,7 @@ const Navbar = () => {
                   Dashboard
                 </Link>
               </li>
-            )}
+            )} */}
 
             {/* User Section - Name now opens a dropdown */}
             {user ? (

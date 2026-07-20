@@ -126,6 +126,7 @@ const Footer = () => {
               <li><Link to="/about">Amanah and Ikhlas Initiative-Smart Giving</Link></li>
               <li><Link to="/contact">Contact Us</Link></li>
               <li><Link to="/partnerships">Partnerships</Link></li>
+              <li><a href="https://prof-mustapha-abubakar-e-library.netlify.app">Waqf Link</a></li>
             </ul>
           </div>
 
