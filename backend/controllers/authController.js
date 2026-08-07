@@ -132,8 +132,11 @@ const sendVerificationEmail = async ({ email, name, rawToken }) => {
 // @desc    Register a new user (creates an UNVERIFIED account and emails a verify link)
 // @route   POST /api/auth/register
 exports.register = async (req, res) => {
+  console.log('🔥🔥🔥 REGISTER FUNCTION HIT - body:', { ...req.body, password: '[hidden]' });
+
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
+    console.log('❌ REGISTER validation failed:', errors.array());
     return res.status(400).json({ errors: errors.array() });
   }
 
@@ -324,7 +327,6 @@ exports.login = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 
 // @desc    Request a password reset link (sends an email with a one-time token)
 // @route   POST /api/auth/forgot-password
