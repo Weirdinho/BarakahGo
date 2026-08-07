@@ -1,60 +1,61 @@
 const { validationResult } = require('express-validator');
 const axios = require('axios');
 
-// ---- Resend transactional email via HTTP API ----
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const RESEND_API_URL = 'https://api.resend.com/emails';
+// ---- Brevo (Sendinblue) transactional email via HTTP API ----
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-const EMAIL_FROM = process.env.EMAIL_FROM; // must be a verified sender/domain in Resend
+const EMAIL_FROM = process.env.EMAIL_FROM; // must be a verified sender in Brevo
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Amanah and Ikhlas Charitable Initiative';
 const RECEIVER_EMAIL = process.env.RECEIVER_EMAIL || EMAIL_FROM;
 
-console.log('🔧 [contact] RESEND_API_KEY present:', !!RESEND_API_KEY);
+console.log('🔧 [contact] BREVO_API_KEY present:', !!BREVO_API_KEY);
 console.log('🔧 [contact] RECEIVER_EMAIL resolved to:', RECEIVER_EMAIL);
 
-if (!RESEND_API_KEY) {
-  console.log('⚠️ [contact] RESEND_API_KEY not found - emails will be logged only');
+if (!BREVO_API_KEY) {
+  console.log('⚠️ [contact] BREVO_API_KEY not found - emails will be logged only');
 }
 
-// Shared helper: send an email through Resend's HTTP API
-const sendResendEmail = async ({ to, subject, html, replyTo }) => {
-  console.log('📤 [contact] sendResendEmail called - to:', to, 'subject:', subject, 'replyTo:', replyTo);
+// Shared helper: send an email through Brevo's HTTP API
+const sendBrevoEmail = async ({ to, toName, subject, html, replyTo }) => {
+  console.log('📤 [contact] sendBrevoEmail called - to:', to, 'subject:', subject, 'replyTo:', replyTo);
 
-  if (!RESEND_API_KEY) {
-    console.log('⚠️ [contact] No RESEND_API_KEY, skipping actual send');
+  if (!BREVO_API_KEY) {
+    console.log('⚠️ [contact] No BREVO_API_KEY, skipping actual send');
     return { skipped: true };
   }
 
   const payload = {
-    from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
-    to: [to],
+    sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM },
+    to: [{ email: to, name: toName || undefined }],
     subject,
-    html,
-    ...(replyTo && { reply_to: replyTo })
+    htmlContent: html,
+    ...(replyTo && { replyTo: { email: replyTo } })
   };
 
-  const response = await axios.post(RESEND_API_URL, payload, {
+  const response = await axios.post(BREVO_API_URL, payload, {
     headers: {
-      'Authorization': `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json'
+      'accept': 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json'
     },
     timeout: 15000
   }).catch(axiosErr => {
     if (axiosErr.response) {
-      console.error('❌ [contact] Resend API error - status:', axiosErr.response.status);
-      console.error('❌ [contact] Resend API response body:', axiosErr.response.data);
-      const err = new Error(axiosErr.response.data?.message || `Resend API returned ${axiosErr.response.status}`);
-      err.resendResponse = axiosErr.response.data;
+      console.error('❌ [contact] Brevo API error - status:', axiosErr.response.status);
+      console.error('❌ [contact] Brevo API response body:', axiosErr.response.data);
+      const err = new Error(axiosErr.response.data?.message || `Brevo API returned ${axiosErr.response.status}`);
+      err.brevoResponse = axiosErr.response.data;
       err.status = axiosErr.response.status;
       throw err;
     } else if (axiosErr.request) {
-      console.error('❌ [contact] Resend API - no response received:', axiosErr.code, axiosErr.message);
-      throw new Error(`No response from Resend API: ${axiosErr.code || axiosErr.message}`);
+      console.error('❌ [contact] Brevo API - no response received:', axiosErr.code, axiosErr.message);
+      throw new Error(`No response from Brevo API: ${axiosErr.code || axiosErr.message}`);
     }
     throw axiosErr;
   });
 
-  console.log('✅ [contact] Resend accepted the email - id:', response.data.id);
+  console.log('✅ [contact] Brevo accepted the email - messageId:', response.data.messageId);
   return response.data;
 };
 
@@ -68,10 +69,10 @@ exports.sendContact = async (req, res) => {
     const { name, email, subject, message } = req.body;
 
     console.log('📨 Contact form received:', { name, email, subject, time: new Date().toISOString() });
-    console.log('📤 [contact] RESEND_API_KEY configured:', !!RESEND_API_KEY);
+    console.log('📤 [contact] BREVO_API_KEY configured:', !!BREVO_API_KEY);
 
-    if (!RESEND_API_KEY) {
-      console.log('⚠️ [contact] No RESEND_API_KEY - skipping send, returning fallback success message');
+    if (!BREVO_API_KEY) {
+      console.log('⚠️ [contact] No BREVO_API_KEY - skipping send, returning fallback success message');
       return res.json({
         success: true,
         message: 'Message received! We will contact you soon.'
@@ -87,19 +88,19 @@ exports.sendContact = async (req, res) => {
       <p>${message.replace(/\n/g, '<br>')}</p>
     `;
 
-    await sendResendEmail({
+    await sendBrevoEmail({
       to: RECEIVER_EMAIL,
       subject: `Contact Form: ${subject}`,
       html,
       replyTo: email
     });
-    console.log('✅ Contact email sent via Resend');
+    console.log('✅ Contact email sent via Brevo');
 
     res.json({ success: true, message: 'Email sent successfully' });
 
   } catch (error) {
-    console.error('❌ Resend error:', error.message);
-    console.error('❌ [contact] Resend response:', error.resendResponse);
+    console.error('❌ Brevo error:', error.message);
+    console.error('❌ [contact] Brevo response:', error.brevoResponse);
 
     res.json({
       success: true,

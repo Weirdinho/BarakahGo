@@ -4,69 +4,70 @@ const { validationResult } = require('express-validator');
 const axios = require('axios');
 const User = require('../models/User');
 
-// ---- Resend transactional email via HTTP API ----
-// Uses the HTTP API (not SMTP) because many hosts (e.g. Render's free tier)
+// ---- Brevo (Sendinblue) transactional email via HTTP API ----
+// Uses the HTTP API instead of SMTP because many hosts (e.g. Render's free tier)
 // block outbound SMTP ports (25/465/587) but allow normal HTTPS calls.
-const RESEND_API_KEY = process.env.RESEND_API_KEY;
-const RESEND_API_URL = 'https://api.resend.com/emails';
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-console.log('🔧 RESEND_API_KEY present:', !!RESEND_API_KEY);
+console.log('🔧 BREVO_API_KEY present:', !!BREVO_API_KEY);
 
-const EMAIL_FROM = process.env.EMAIL_FROM; // must be a verified sender/domain in Resend
+const EMAIL_FROM = process.env.EMAIL_FROM; // must be a verified sender in Brevo
 const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Amanah and Ikhlas Charitable Initiative';
 
-if (!RESEND_API_KEY) {
-  console.log('⚠️ RESEND_API_KEY not found - emails will be logged only');
+if (!BREVO_API_KEY) {
+  console.log('⚠️ BREVO_API_KEY not found - emails will be logged only');
 }
-if (RESEND_API_KEY && !EMAIL_FROM) {
-  console.log('⚠️ EMAIL_FROM not set - Resend requires a verified sender email/domain');
+if (BREVO_API_KEY && !EMAIL_FROM) {
+  console.log('⚠️ EMAIL_FROM not set - Brevo requires a verified sender email');
 }
 
-// Shared helper: send an email through Resend's HTTP API
-const sendResendEmail = async ({ to, subject, html, replyTo }) => {
-  console.log('📤 sendResendEmail called - to:', to, 'subject:', subject);
+// Shared helper: send an email through Brevo's HTTP API
+const sendBrevoEmail = async ({ to, toName, subject, html, replyTo }) => {
+  console.log('📤 sendBrevoEmail called - to:', to, 'subject:', subject);
 
-  if (!RESEND_API_KEY) {
-    console.log('⚠️ No RESEND_API_KEY, skipping actual send');
+  if (!BREVO_API_KEY) {
+    console.log('⚠️ No BREVO_API_KEY, skipping actual send');
     return { skipped: true };
   }
 
   const payload = {
-    from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
-    to: [to],
+    sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM },
+    to: [{ email: to, name: toName || undefined }],
     subject,
-    html,
-    ...(replyTo && { reply_to: replyTo })
+    htmlContent: html,
+    ...(replyTo && { replyTo: { email: replyTo } })
   };
 
-  console.log('📤 Posting to Resend API for:', to);
+  console.log('📤 Posting to Brevo API for:', to);
 
   try {
-    const response = await axios.post(RESEND_API_URL, payload, {
+    const response = await axios.post(BREVO_API_URL, payload, {
       headers: {
-        'Authorization': `Bearer ${RESEND_API_KEY}`,
-        'Content-Type': 'application/json'
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
       },
       timeout: 15000 // fail fast instead of hanging
     });
 
-    console.log('✅ Resend accepted the email - id:', response.data.id);
+    console.log('✅ Brevo accepted the email - messageId:', response.data.messageId);
     return response.data;
   } catch (axiosErr) {
     if (axiosErr.response) {
-      // Resend responded with an error status
-      console.error('❌ Resend API error - status:', axiosErr.response.status);
-      console.error('❌ Resend API response body:', axiosErr.response.data);
-      const err = new Error(axiosErr.response.data?.message || `Resend API returned ${axiosErr.response.status}`);
-      err.resendResponse = axiosErr.response.data;
+      // Brevo responded with an error status
+      console.error('❌ Brevo API error - status:', axiosErr.response.status);
+      console.error('❌ Brevo API response body:', axiosErr.response.data);
+      const err = new Error(axiosErr.response.data?.message || `Brevo API returned ${axiosErr.response.status}`);
+      err.brevoResponse = axiosErr.response.data;
       err.status = axiosErr.response.status;
       throw err;
     } else if (axiosErr.request) {
       // Request was made but no response came back (network/timeout issue)
-      console.error('❌ Resend API - no response received:', axiosErr.code, axiosErr.message);
-      throw new Error(`No response from Resend API: ${axiosErr.code || axiosErr.message}`);
+      console.error('❌ Brevo API - no response received:', axiosErr.code, axiosErr.message);
+      throw new Error(`No response from Brevo API: ${axiosErr.code || axiosErr.message}`);
     } else {
-      console.error('❌ Resend API - request setup error:', axiosErr.message);
+      console.error('❌ Brevo API - request setup error:', axiosErr.message);
       throw axiosErr;
     }
   }
@@ -87,8 +88,8 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
 const sendVerificationEmail = async ({ email, name, rawToken }) => {
   const verifyUrl = `${CLIENT_URL}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
-  if (!RESEND_API_KEY) {
-    console.log('🔗 Verification link (dev only, no Resend API key configured):', verifyUrl);
+  if (!BREVO_API_KEY) {
+    console.log('🔗 Verification link (dev only, no Brevo API key configured):', verifyUrl);
     return { devUrl: verifyUrl };
   }
 
@@ -127,11 +128,11 @@ const sendVerificationEmail = async ({ email, name, rawToken }) => {
   `;
 
   try {
-    await sendResendEmail({ to: email, subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative', html });
-    console.log('✅ Verification email sent via Resend to:', email);
+    await sendBrevoEmail({ to: email, toName: name, subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative', html });
+    console.log('✅ Verification email sent via Brevo to:', email);
     return {};
   } catch (sendErr) {
-    console.error('❌ Failed to send verification email via Resend for:', email, '-', sendErr.message);
+    console.error('❌ Failed to send verification email via Brevo for:', email, '-', sendErr.message);
     throw sendErr;
   }
 };
@@ -367,9 +368,9 @@ exports.forgotPassword = async (req, res) => {
 
     console.log('📨 Password reset requested for:', { email, time: new Date().toISOString() });
 
-    // If no Resend API key configured, just log the link so you can still test locally
-    if (!RESEND_API_KEY) {
-      console.log('🔗 Reset link (dev only, no Resend API key configured):', resetUrl);
+    // If no Brevo API key configured, just log the link so you can still test locally
+    if (!BREVO_API_KEY) {
+      console.log('🔗 Reset link (dev only, no Brevo API key configured):', resetUrl);
       return res.json({
         message: genericMessage,
         ...(process.env.NODE_ENV === 'development' && { resetUrl })
@@ -411,10 +412,10 @@ exports.forgotPassword = async (req, res) => {
     `;
 
     try {
-      await sendResendEmail({ to: email, subject: 'Reset Your Password - Amanah and Ikhlas Charitable Initiative', html });
-      console.log('✅ Password reset email sent via Resend to:', email);
+      await sendBrevoEmail({ to: email, toName: user.name, subject: 'Reset Your Password - Amanah and Ikhlas Charitable Initiative', html });
+      console.log('✅ Password reset email sent via Brevo to:', email);
     } catch (emailErr) {
-      console.error('❌ Failed to send reset email via Resend:', emailErr.message);
+      console.error('❌ Failed to send reset email via Brevo:', emailErr.message);
     }
 
     res.json({ message: genericMessage });
