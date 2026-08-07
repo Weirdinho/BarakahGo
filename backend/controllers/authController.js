@@ -325,6 +325,7 @@ exports.login = async (req, res) => {
   }
 };
 
+
 // @desc    Request a password reset link (sends an email with a one-time token)
 // @route   POST /api/auth/forgot-password
 exports.forgotPassword = async (req, res) => {
