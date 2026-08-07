@@ -8,6 +8,9 @@ const nodemailer = require('nodemailer');
 // Gmail SMTP transporter (same pattern as authController.js)
 let transporter = null;
 
+console.log('🔧 [admin] EMAIL_USER present:', !!process.env.EMAIL_USER);
+console.log('🔧 [admin] EMAIL_APP_PASSWORD present:', !!process.env.EMAIL_APP_PASSWORD);
+
 if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
   transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -16,8 +19,18 @@ if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
       pass: process.env.EMAIL_APP_PASSWORD
     }
   });
+  console.log('✅ [admin] Gmail SMTP configured for user:', process.env.EMAIL_USER);
+
+  transporter.verify((err, success) => {
+    if (err) {
+      console.error('❌ [admin] Gmail SMTP verify FAILED:', err.message);
+      console.error('❌ [admin] Full verify error:', err);
+    } else {
+      console.log('✅ [admin] Gmail SMTP verify OK - ready to send');
+    }
+  });
 } else {
-  console.log('⚠️ Gmail SMTP credentials not found - approval emails will be skipped');
+  console.log('⚠️ [admin] Gmail SMTP credentials not found - approval emails will be skipped');
 }
 
 const EMAIL_FROM = process.env.EMAIL_FROM || process.env.EMAIL_USER;
@@ -138,9 +151,12 @@ exports.updateApplication = async (req, res) => {
       .populate('voucher', 'code amount status');
 
     // Send approval email via Gmail SMTP
+    console.log('📤 [admin] Approval email check - transporter:', !!transporter, 'status:', status, 'hasVoucher:', !!updatedApp.voucher);
+
     if (transporter && status === 'approved' && updatedApp.voucher) {
       try {
         const applicant = await User.findById(application.applicant);
+        console.log('📤 [admin] Applicant lookup:', applicant ? applicant.email : 'NOT FOUND');
 
         if (applicant && applicant.email) {
           const html = `
@@ -177,16 +193,22 @@ exports.updateApplication = async (req, res) => {
             </div>
           `;
 
-          await transporter.sendMail({
+          console.log('📤 [admin] Attempting transporter.sendMail() to:', applicant.email, 'from:', EMAIL_FROM);
+          const info = await transporter.sendMail({
             from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
             to: applicant.email,
             subject: 'Aid Application Approved - Amanah and Ikhlas Charitable Initiative',
             html
           });
           console.log('✅ Approval email sent via Gmail SMTP to:', applicant.email);
+          console.log('✅ [admin] SMTP response:', info.response);
+          console.log('✅ [admin] Message ID:', info.messageId);
+          console.log('✅ [admin] Accepted:', info.accepted, 'Rejected:', info.rejected);
         }
       } catch (emailErr) {
         console.error('❌ Failed to send approval email:', emailErr.message);
+        console.error('❌ [admin] Error code:', emailErr.code);
+        console.error('❌ [admin] Full error:', emailErr);
         // Don't fail the request if email fails
       }
     }

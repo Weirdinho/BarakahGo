@@ -7,6 +7,9 @@ const User = require('../models/User');
 // Gmail SMTP transporter
 let transporter = null;
 
+console.log('🔧 EMAIL_USER present:', !!process.env.EMAIL_USER);
+console.log('🔧 EMAIL_APP_PASSWORD present:', !!process.env.EMAIL_APP_PASSWORD, '(length:', process.env.EMAIL_APP_PASSWORD ? process.env.EMAIL_APP_PASSWORD.length : 0, ')');
+
 if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
   transporter = nodemailer.createTransport({
     service: 'gmail',
@@ -15,7 +18,17 @@ if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
       pass: process.env.EMAIL_APP_PASSWORD
     }
   });
-  console.log('✅ Gmail SMTP configured');
+  console.log('✅ Gmail SMTP configured for user:', process.env.EMAIL_USER);
+
+  // Verify the connection/credentials on startup so bad creds show up immediately in logs
+  transporter.verify((err, success) => {
+    if (err) {
+      console.error('❌ Gmail SMTP verify FAILED:', err.message);
+      console.error('❌ Full verify error:', err);
+    } else {
+      console.log('✅ Gmail SMTP verify OK - ready to send');
+    }
+  });
 } else {
   console.log('⚠️ Gmail SMTP credentials not found - emails will be logged only');
 }
@@ -35,6 +48,9 @@ const EMAIL_FROM = process.env.EMAIL_FROM || process.env.EMAIL_USER;
 // Shared helper to actually send (or log, in dev) the verification email
 const sendVerificationEmail = async ({ email, name, rawToken }) => {
   const verifyUrl = `${CLIENT_URL}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
+
+  console.log('📤 sendVerificationEmail called for:', email);
+  console.log('📤 transporter configured:', !!transporter);
 
   if (!transporter) {
     console.log('🔗 Verification link (dev only, no Gmail SMTP configured):', verifyUrl);
@@ -75,14 +91,26 @@ const sendVerificationEmail = async ({ email, name, rawToken }) => {
     </div>
   `;
 
-  await transporter.sendMail({
-    from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
-    to: email,
-    subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative',
-    html
-  });
-  console.log('✅ Verification email sent via Gmail SMTP to:', email);
-  return {};
+  try {
+    console.log('📤 Attempting transporter.sendMail() to:', email, 'from:', EMAIL_FROM);
+    const info = await transporter.sendMail({
+      from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
+      to: email,
+      subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative',
+      html
+    });
+    console.log('✅ Verification email sent via Gmail SMTP to:', email);
+    console.log('✅ SMTP response:', info.response);
+    console.log('✅ Message ID:', info.messageId);
+    console.log('✅ Accepted:', info.accepted, 'Rejected:', info.rejected);
+    return {};
+  } catch (sendErr) {
+    console.error('❌ transporter.sendMail() THREW for:', email);
+    console.error('❌ Error message:', sendErr.message);
+    console.error('❌ Error code:', sendErr.code);
+    console.error('❌ Full error:', sendErr);
+    throw sendErr;
+  }
 };
 
 // @desc    Register a new user (creates an UNVERIFIED account and emails a verify link)
@@ -117,6 +145,7 @@ exports.register = async (req, res) => {
     });
 
     await user.save();
+    console.log('👤 User saved, attempting to send verification email to:', normalizedEmail);
 
     let devUrl;
     try {
@@ -311,6 +340,7 @@ exports.forgotPassword = async (req, res) => {
     const resetUrl = `${CLIENT_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     console.log('📨 Password reset requested for:', { email, time: new Date().toISOString() });
+    console.log('📤 transporter configured:', !!transporter);
 
     // If no Gmail SMTP configured, just log the link so you can still test locally
     if (!transporter) {
@@ -356,15 +386,21 @@ exports.forgotPassword = async (req, res) => {
     `;
 
     try {
-      await transporter.sendMail({
+      console.log('📤 Attempting transporter.sendMail() (reset) to:', email, 'from:', EMAIL_FROM);
+      const info = await transporter.sendMail({
         from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
         to: email,
         subject: 'Reset Your Password - Amanah and Ikhlas Charitable Initiative',
         html
       });
       console.log('✅ Password reset email sent via Gmail SMTP to:', email);
+      console.log('✅ SMTP response:', info.response);
+      console.log('✅ Message ID:', info.messageId);
+      console.log('✅ Accepted:', info.accepted, 'Rejected:', info.rejected);
     } catch (emailErr) {
       console.error('❌ Failed to send reset email:', emailErr.message);
+      console.error('❌ Error code:', emailErr.code);
+      console.error('❌ Full error:', emailErr);
     }
 
     res.json({ message: genericMessage });
