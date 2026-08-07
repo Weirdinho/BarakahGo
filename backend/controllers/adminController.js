@@ -3,37 +3,59 @@ const Voucher = require('../models/Voucher');
 const User = require('../models/User');
 const Donation = require('../models/Donation');
 const crypto = require('crypto');
-const nodemailer = require('nodemailer');
 
-// Gmail SMTP transporter (same pattern as authController.js)
-let transporter = null;
+// ---- Brevo (Sendinblue) transactional email via HTTP API ----
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-console.log('🔧 [admin] EMAIL_USER present:', !!process.env.EMAIL_USER);
-console.log('🔧 [admin] EMAIL_APP_PASSWORD present:', !!process.env.EMAIL_APP_PASSWORD);
+const EMAIL_FROM = process.env.EMAIL_FROM; // must be a verified sender in Brevo
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Amanah and Ikhlas Charitable Initiative';
 
-if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD
-    }
-  });
-  console.log('✅ [admin] Gmail SMTP configured for user:', process.env.EMAIL_USER);
-
-  transporter.verify((err, success) => {
-    if (err) {
-      console.error('❌ [admin] Gmail SMTP verify FAILED:', err.message);
-      console.error('❌ [admin] Full verify error:', err);
-    } else {
-      console.log('✅ [admin] Gmail SMTP verify OK - ready to send');
-    }
-  });
-} else {
-  console.log('⚠️ [admin] Gmail SMTP credentials not found - approval emails will be skipped');
+console.log('🔧 [admin] BREVO_API_KEY present:', !!BREVO_API_KEY);
+if (!BREVO_API_KEY) {
+  console.log('⚠️ [admin] BREVO_API_KEY not found - approval emails will be skipped');
 }
 
-const EMAIL_FROM = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+// Shared helper: send an email through Brevo's HTTP API
+const sendBrevoEmail = async ({ to, toName, subject, html }) => {
+  console.log('📤 [admin] sendBrevoEmail called - to:', to, 'subject:', subject);
+
+  if (!BREVO_API_KEY) {
+    console.log('⚠️ [admin] No BREVO_API_KEY, skipping actual send');
+    return { skipped: true };
+  }
+
+  const payload = {
+    sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM },
+    to: [{ email: to, name: toName || undefined }],
+    subject,
+    htmlContent: html
+  };
+
+  const response = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const responseBody = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error('❌ [admin] Brevo API error - status:', response.status);
+    console.error('❌ [admin] Brevo API response body:', responseBody);
+    const err = new Error(responseBody.message || `Brevo API returned ${response.status}`);
+    err.brevoResponse = responseBody;
+    err.status = response.status;
+    throw err;
+  }
+
+  console.log('✅ [admin] Brevo accepted the email - messageId:', responseBody.messageId);
+  return responseBody;
+};
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -150,10 +172,10 @@ exports.updateApplication = async (req, res) => {
       .populate('applicant', 'name email phone')
       .populate('voucher', 'code amount status');
 
-    // Send approval email via Gmail SMTP
-    console.log('📤 [admin] Approval email check - transporter:', !!transporter, 'status:', status, 'hasVoucher:', !!updatedApp.voucher);
+    // Send approval email via Brevo
+    console.log('📤 [admin] Approval email check - BREVO_API_KEY:', !!BREVO_API_KEY, 'status:', status, 'hasVoucher:', !!updatedApp.voucher);
 
-    if (transporter && status === 'approved' && updatedApp.voucher) {
+    if (BREVO_API_KEY && status === 'approved' && updatedApp.voucher) {
       try {
         const applicant = await User.findById(application.applicant);
         console.log('📤 [admin] Applicant lookup:', applicant ? applicant.email : 'NOT FOUND');
@@ -193,22 +215,16 @@ exports.updateApplication = async (req, res) => {
             </div>
           `;
 
-          console.log('📤 [admin] Attempting transporter.sendMail() to:', applicant.email, 'from:', EMAIL_FROM);
-          const info = await transporter.sendMail({
-            from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
+          await sendBrevoEmail({
             to: applicant.email,
+            toName: applicant.name,
             subject: 'Aid Application Approved - Amanah and Ikhlas Charitable Initiative',
             html
           });
-          console.log('✅ Approval email sent via Gmail SMTP to:', applicant.email);
-          console.log('✅ [admin] SMTP response:', info.response);
-          console.log('✅ [admin] Message ID:', info.messageId);
-          console.log('✅ [admin] Accepted:', info.accepted, 'Rejected:', info.rejected);
+          console.log('✅ Approval email sent via Brevo to:', applicant.email);
         }
       } catch (emailErr) {
-        console.error('❌ Failed to send approval email:', emailErr.message);
-        console.error('❌ [admin] Error code:', emailErr.code);
-        console.error('❌ [admin] Full error:', emailErr);
+        console.error('❌ Failed to send approval email via Brevo:', emailErr.message);
         // Don't fail the request if email fails
       }
     }

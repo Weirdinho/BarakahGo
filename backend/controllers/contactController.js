@@ -1,38 +1,61 @@
-const nodemailer = require('nodemailer');
 const { validationResult } = require('express-validator');
 
-// Gmail SMTP transporter (same pattern as authController.js / adminController.js)
-let transporter = null;
+// ---- Brevo (Sendinblue) transactional email via HTTP API ----
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-console.log('🔧 [contact] EMAIL_USER present:', !!process.env.EMAIL_USER);
-console.log('🔧 [contact] EMAIL_APP_PASSWORD present:', !!process.env.EMAIL_APP_PASSWORD);
-
-if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD
-    }
-  });
-  console.log('✅ [contact] Gmail SMTP configured for user:', process.env.EMAIL_USER);
-
-  transporter.verify((err, success) => {
-    if (err) {
-      console.error('❌ [contact] Gmail SMTP verify FAILED:', err.message);
-      console.error('❌ [contact] Full verify error:', err);
-    } else {
-      console.log('✅ [contact] Gmail SMTP verify OK - ready to send');
-    }
-  });
-} else {
-  console.log('⚠️ [contact] Gmail SMTP credentials not found - emails will be logged only');
-}
-
-const EMAIL_FROM = process.env.EMAIL_FROM || process.env.EMAIL_USER;
+const EMAIL_FROM = process.env.EMAIL_FROM; // must be a verified sender in Brevo
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Amanah and Ikhlas Charitable Initiative';
 const RECEIVER_EMAIL = process.env.RECEIVER_EMAIL || EMAIL_FROM;
 
+console.log('🔧 [contact] BREVO_API_KEY present:', !!BREVO_API_KEY);
 console.log('🔧 [contact] RECEIVER_EMAIL resolved to:', RECEIVER_EMAIL);
+
+if (!BREVO_API_KEY) {
+  console.log('⚠️ [contact] BREVO_API_KEY not found - emails will be logged only');
+}
+
+// Shared helper: send an email through Brevo's HTTP API
+const sendBrevoEmail = async ({ to, toName, subject, html, replyTo }) => {
+  console.log('📤 [contact] sendBrevoEmail called - to:', to, 'subject:', subject, 'replyTo:', replyTo);
+
+  if (!BREVO_API_KEY) {
+    console.log('⚠️ [contact] No BREVO_API_KEY, skipping actual send');
+    return { skipped: true };
+  }
+
+  const payload = {
+    sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM },
+    to: [{ email: to, name: toName || undefined }],
+    subject,
+    htmlContent: html,
+    ...(replyTo && { replyTo: { email: replyTo } })
+  };
+
+  const response = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const responseBody = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error('❌ [contact] Brevo API error - status:', response.status);
+    console.error('❌ [contact] Brevo API response body:', responseBody);
+    const err = new Error(responseBody.message || `Brevo API returned ${response.status}`);
+    err.brevoResponse = responseBody;
+    err.status = response.status;
+    throw err;
+  }
+
+  console.log('✅ [contact] Brevo accepted the email - messageId:', responseBody.messageId);
+  return responseBody;
+};
 
 exports.sendContact = async (req, res) => {
   const errors = validationResult(req);
@@ -44,10 +67,10 @@ exports.sendContact = async (req, res) => {
     const { name, email, subject, message } = req.body;
 
     console.log('📨 Contact form received:', { name, email, subject, time: new Date().toISOString() });
-    console.log('📤 [contact] transporter configured:', !!transporter);
+    console.log('📤 [contact] BREVO_API_KEY configured:', !!BREVO_API_KEY);
 
-    if (!transporter) {
-      console.log('⚠️ [contact] No transporter - skipping send, returning fallback success message');
+    if (!BREVO_API_KEY) {
+      console.log('⚠️ [contact] No BREVO_API_KEY - skipping send, returning fallback success message');
       return res.json({
         success: true,
         message: 'Message received! We will contact you soon.'
@@ -63,25 +86,19 @@ exports.sendContact = async (req, res) => {
       <p>${message.replace(/\n/g, '<br>')}</p>
     `;
 
-    console.log('📤 [contact] Attempting transporter.sendMail() to:', RECEIVER_EMAIL, 'from:', EMAIL_FROM, 'replyTo:', email);
-    const info = await transporter.sendMail({
-      from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
+    await sendBrevoEmail({
       to: RECEIVER_EMAIL,
-      replyTo: email,
       subject: `Contact Form: ${subject}`,
-      html
+      html,
+      replyTo: email
     });
-    console.log('✅ Contact email sent via Gmail SMTP');
-    console.log('✅ [contact] SMTP response:', info.response);
-    console.log('✅ [contact] Message ID:', info.messageId);
-    console.log('✅ [contact] Accepted:', info.accepted, 'Rejected:', info.rejected);
+    console.log('✅ Contact email sent via Brevo');
 
     res.json({ success: true, message: 'Email sent successfully' });
 
   } catch (error) {
-    console.error('❌ Gmail SMTP error:', error.message);
-    console.error('❌ [contact] Error code:', error.code);
-    console.error('❌ [contact] Full error:', error);
+    console.error('❌ Brevo error:', error.message);
+    console.error('❌ [contact] Brevo response:', error.brevoResponse);
 
     res.json({
       success: true,

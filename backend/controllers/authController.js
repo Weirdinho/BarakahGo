@@ -1,37 +1,69 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
-const nodemailer = require('nodemailer');
 const User = require('../models/User');
 
-// Gmail SMTP transporter
-let transporter = null;
+// ---- Brevo (Sendinblue) transactional email via HTTP API ----
+// Uses the HTTP API instead of SMTP because many hosts (e.g. Render's free tier)
+// block outbound SMTP ports (25/465/587) but allow normal HTTPS calls.
+const BREVO_API_KEY = process.env.BREVO_API_KEY;
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
-console.log('🔧 EMAIL_USER present:', !!process.env.EMAIL_USER);
-console.log('🔧 EMAIL_APP_PASSWORD present:', !!process.env.EMAIL_APP_PASSWORD, '(length:', process.env.EMAIL_APP_PASSWORD ? process.env.EMAIL_APP_PASSWORD.length : 0, ')');
+console.log('🔧 BREVO_API_KEY present:', !!BREVO_API_KEY);
 
-if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
-  transporter = nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_APP_PASSWORD
-    }
-  });
-  console.log('✅ Gmail SMTP configured for user:', process.env.EMAIL_USER);
+const EMAIL_FROM = process.env.EMAIL_FROM; // must be a verified sender in Brevo
+const EMAIL_FROM_NAME = process.env.EMAIL_FROM_NAME || 'Amanah and Ikhlas Charitable Initiative';
 
-  // Verify the connection/credentials on startup so bad creds show up immediately in logs
-  transporter.verify((err, success) => {
-    if (err) {
-      console.error('❌ Gmail SMTP verify FAILED:', err.message);
-      console.error('❌ Full verify error:', err);
-    } else {
-      console.log('✅ Gmail SMTP verify OK - ready to send');
-    }
-  });
-} else {
-  console.log('⚠️ Gmail SMTP credentials not found - emails will be logged only');
+if (!BREVO_API_KEY) {
+  console.log('⚠️ BREVO_API_KEY not found - emails will be logged only');
 }
+if (BREVO_API_KEY && !EMAIL_FROM) {
+  console.log('⚠️ EMAIL_FROM not set - Brevo requires a verified sender email');
+}
+
+// Shared helper: send an email through Brevo's HTTP API
+const sendBrevoEmail = async ({ to, toName, subject, html, replyTo }) => {
+  console.log('📤 sendBrevoEmail called - to:', to, 'subject:', subject);
+
+  if (!BREVO_API_KEY) {
+    console.log('⚠️ No BREVO_API_KEY, skipping actual send');
+    return { skipped: true };
+  }
+
+  const payload = {
+    sender: { name: EMAIL_FROM_NAME, email: EMAIL_FROM },
+    to: [{ email: to, name: toName || undefined }],
+    subject,
+    htmlContent: html,
+    ...(replyTo && { replyTo: { email: replyTo } })
+  };
+
+  console.log('📤 Posting to Brevo API for:', to);
+
+  const response = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'accept': 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify(payload)
+  });
+
+  const responseBody = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    console.error('❌ Brevo API error - status:', response.status);
+    console.error('❌ Brevo API response body:', responseBody);
+    const err = new Error(responseBody.message || `Brevo API returned ${response.status}`);
+    err.brevoResponse = responseBody;
+    err.status = response.status;
+    throw err;
+  }
+
+  console.log('✅ Brevo accepted the email - messageId:', responseBody.messageId);
+  return responseBody;
+};
 
 // Generate JWT
 const generateToken = (id) => {
@@ -43,17 +75,13 @@ const generateToken = (id) => {
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
-const EMAIL_FROM = process.env.EMAIL_FROM || process.env.EMAIL_USER;
 
 // Shared helper to actually send (or log, in dev) the verification email
 const sendVerificationEmail = async ({ email, name, rawToken }) => {
   const verifyUrl = `${CLIENT_URL}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
-  console.log('📤 sendVerificationEmail called for:', email);
-  console.log('📤 transporter configured:', !!transporter);
-
-  if (!transporter) {
-    console.log('🔗 Verification link (dev only, no Gmail SMTP configured):', verifyUrl);
+  if (!BREVO_API_KEY) {
+    console.log('🔗 Verification link (dev only, no Brevo API key configured):', verifyUrl);
     return { devUrl: verifyUrl };
   }
 
@@ -92,23 +120,11 @@ const sendVerificationEmail = async ({ email, name, rawToken }) => {
   `;
 
   try {
-    console.log('📤 Attempting transporter.sendMail() to:', email, 'from:', EMAIL_FROM);
-    const info = await transporter.sendMail({
-      from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
-      to: email,
-      subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative',
-      html
-    });
-    console.log('✅ Verification email sent via Gmail SMTP to:', email);
-    console.log('✅ SMTP response:', info.response);
-    console.log('✅ Message ID:', info.messageId);
-    console.log('✅ Accepted:', info.accepted, 'Rejected:', info.rejected);
+    await sendBrevoEmail({ to: email, toName: name, subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative', html });
+    console.log('✅ Verification email sent via Brevo to:', email);
     return {};
   } catch (sendErr) {
-    console.error('❌ transporter.sendMail() THREW for:', email);
-    console.error('❌ Error message:', sendErr.message);
-    console.error('❌ Error code:', sendErr.code);
-    console.error('❌ Full error:', sendErr);
+    console.error('❌ Failed to send verification email via Brevo for:', email, '-', sendErr.message);
     throw sendErr;
   }
 };
@@ -340,11 +356,10 @@ exports.forgotPassword = async (req, res) => {
     const resetUrl = `${CLIENT_URL}/reset-password?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
     console.log('📨 Password reset requested for:', { email, time: new Date().toISOString() });
-    console.log('📤 transporter configured:', !!transporter);
 
-    // If no Gmail SMTP configured, just log the link so you can still test locally
-    if (!transporter) {
-      console.log('🔗 Reset link (dev only, no Gmail SMTP configured):', resetUrl);
+    // If no Brevo API key configured, just log the link so you can still test locally
+    if (!BREVO_API_KEY) {
+      console.log('🔗 Reset link (dev only, no Brevo API key configured):', resetUrl);
       return res.json({
         message: genericMessage,
         ...(process.env.NODE_ENV === 'development' && { resetUrl })
@@ -386,21 +401,10 @@ exports.forgotPassword = async (req, res) => {
     `;
 
     try {
-      console.log('📤 Attempting transporter.sendMail() (reset) to:', email, 'from:', EMAIL_FROM);
-      const info = await transporter.sendMail({
-        from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
-        to: email,
-        subject: 'Reset Your Password - Amanah and Ikhlas Charitable Initiative',
-        html
-      });
-      console.log('✅ Password reset email sent via Gmail SMTP to:', email);
-      console.log('✅ SMTP response:', info.response);
-      console.log('✅ Message ID:', info.messageId);
-      console.log('✅ Accepted:', info.accepted, 'Rejected:', info.rejected);
+      await sendBrevoEmail({ to: email, toName: user.name, subject: 'Reset Your Password - Amanah and Ikhlas Charitable Initiative', html });
+      console.log('✅ Password reset email sent via Brevo to:', email);
     } catch (emailErr) {
-      console.error('❌ Failed to send reset email:', emailErr.message);
-      console.error('❌ Error code:', emailErr.code);
-      console.error('❌ Full error:', emailErr);
+      console.error('❌ Failed to send reset email via Brevo:', emailErr.message);
     }
 
     res.json({ message: genericMessage });
