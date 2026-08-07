@@ -3,6 +3,7 @@ const Voucher = require('../models/Voucher');
 const User = require('../models/User');
 const Donation = require('../models/Donation');
 const crypto = require('crypto');
+const axios = require('axios');
 
 // ---- Brevo (Sendinblue) transactional email via HTTP API ----
 const BREVO_API_KEY = process.env.BREVO_API_KEY;
@@ -32,29 +33,30 @@ const sendBrevoEmail = async ({ to, toName, subject, html }) => {
     htmlContent: html
   };
 
-  const response = await fetch(BREVO_API_URL, {
-    method: 'POST',
+  const response = await axios.post(BREVO_API_URL, payload, {
     headers: {
       'accept': 'application/json',
       'api-key': BREVO_API_KEY,
       'content-type': 'application/json'
     },
-    body: JSON.stringify(payload)
+    timeout: 15000
+  }).catch(axiosErr => {
+    if (axiosErr.response) {
+      console.error('❌ [admin] Brevo API error - status:', axiosErr.response.status);
+      console.error('❌ [admin] Brevo API response body:', axiosErr.response.data);
+      const err = new Error(axiosErr.response.data?.message || `Brevo API returned ${axiosErr.response.status}`);
+      err.brevoResponse = axiosErr.response.data;
+      err.status = axiosErr.response.status;
+      throw err;
+    } else if (axiosErr.request) {
+      console.error('❌ [admin] Brevo API - no response received:', axiosErr.code, axiosErr.message);
+      throw new Error(`No response from Brevo API: ${axiosErr.code || axiosErr.message}`);
+    }
+    throw axiosErr;
   });
 
-  const responseBody = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    console.error('❌ [admin] Brevo API error - status:', response.status);
-    console.error('❌ [admin] Brevo API response body:', responseBody);
-    const err = new Error(responseBody.message || `Brevo API returned ${response.status}`);
-    err.brevoResponse = responseBody;
-    err.status = response.status;
-    throw err;
-  }
-
-  console.log('✅ [admin] Brevo accepted the email - messageId:', responseBody.messageId);
-  return responseBody;
+  console.log('✅ [admin] Brevo accepted the email - messageId:', response.data.messageId);
+  return response.data;
 };
 
 // @desc    Get dashboard stats

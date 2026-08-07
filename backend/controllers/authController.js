@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
+const axios = require('axios');
 const User = require('../models/User');
 
 // ---- Brevo (Sendinblue) transactional email via HTTP API ----
@@ -40,29 +41,36 @@ const sendBrevoEmail = async ({ to, toName, subject, html, replyTo }) => {
 
   console.log('📤 Posting to Brevo API for:', to);
 
-  const response = await fetch(BREVO_API_URL, {
-    method: 'POST',
-    headers: {
-      'accept': 'application/json',
-      'api-key': BREVO_API_KEY,
-      'content-type': 'application/json'
-    },
-    body: JSON.stringify(payload)
-  });
+  try {
+    const response = await axios.post(BREVO_API_URL, payload, {
+      headers: {
+        'accept': 'application/json',
+        'api-key': BREVO_API_KEY,
+        'content-type': 'application/json'
+      },
+      timeout: 15000 // fail fast instead of hanging
+    });
 
-  const responseBody = await response.json().catch(() => ({}));
-
-  if (!response.ok) {
-    console.error('❌ Brevo API error - status:', response.status);
-    console.error('❌ Brevo API response body:', responseBody);
-    const err = new Error(responseBody.message || `Brevo API returned ${response.status}`);
-    err.brevoResponse = responseBody;
-    err.status = response.status;
-    throw err;
+    console.log('✅ Brevo accepted the email - messageId:', response.data.messageId);
+    return response.data;
+  } catch (axiosErr) {
+    if (axiosErr.response) {
+      // Brevo responded with an error status
+      console.error('❌ Brevo API error - status:', axiosErr.response.status);
+      console.error('❌ Brevo API response body:', axiosErr.response.data);
+      const err = new Error(axiosErr.response.data?.message || `Brevo API returned ${axiosErr.response.status}`);
+      err.brevoResponse = axiosErr.response.data;
+      err.status = axiosErr.response.status;
+      throw err;
+    } else if (axiosErr.request) {
+      // Request was made but no response came back (network/timeout issue)
+      console.error('❌ Brevo API - no response received:', axiosErr.code, axiosErr.message);
+      throw new Error(`No response from Brevo API: ${axiosErr.code || axiosErr.message}`);
+    } else {
+      console.error('❌ Brevo API - request setup error:', axiosErr.message);
+      throw axiosErr;
+    }
   }
-
-  console.log('✅ Brevo accepted the email - messageId:', responseBody.messageId);
-  return responseBody;
 };
 
 // Generate JWT
