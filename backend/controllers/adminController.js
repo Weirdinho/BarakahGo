@@ -3,6 +3,24 @@ const Voucher = require('../models/Voucher');
 const User = require('../models/User');
 const Donation = require('../models/Donation');
 const crypto = require('crypto');
+const nodemailer = require('nodemailer');
+
+// Gmail SMTP transporter (same pattern as authController.js)
+let transporter = null;
+
+if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_APP_PASSWORD
+    }
+  });
+} else {
+  console.log('⚠️ Gmail SMTP credentials not found - approval emails will be skipped');
+}
+
+const EMAIL_FROM = process.env.EMAIL_FROM || process.env.EMAIL_USER;
 
 // @desc    Get dashboard stats
 // @route   GET /api/admin/stats
@@ -36,11 +54,7 @@ exports.getStats = async (req, res) => {
 // @route   GET /api/admin/users
 exports.getUsers = async (req, res) => {
   try {
-    console.log('🔍 req.user from auth middleware:', req.user);
-    
     const users = await User.find().select('-password').sort({ createdAt: -1 });
-    console.log('👥 Users found:', users.length);
-    
     res.json(users);
   } catch (error) {
     console.error('❌ GET USERS ERROR:', error);
@@ -82,21 +96,15 @@ exports.getApplications = async (req, res) => {
 exports.updateApplication = async (req, res) => {
   try {
     const { status } = req.body;
-    console.log('📋 Updating application:', req.params.id, 'to status:', status);
 
     const application = await Application.findById(req.params.id);
 
     if (!application) {
-      console.log('❌ Application not found');
       return res.status(404).json({ message: 'Application not found' });
     }
 
-    console.log('✅ Application found:', application._id);
-
     // If approving, generate voucher
     if (status === 'approved' && application.status !== 'approved') {
-      console.log('🎫 Generating voucher for amount:', application.amount);
-
       try {
         const random = crypto.randomBytes(4).toString('hex').toUpperCase();
         const code = `AMN-${application.category.substring(0, 3).toUpperCase()}-${random}`;
@@ -109,80 +117,73 @@ exports.updateApplication = async (req, res) => {
           application: application._id
         });
 
-        console.log('📝 Voucher object created with code:', code);
-
         await voucher.save();
-        console.log('✅ Voucher saved:', voucher.code);
-
         application.voucher = voucher._id;
       } catch (voucherError) {
         console.error('❌ VOUCHER CREATION ERROR:', voucherError.message);
         console.error(voucherError.stack);
-        return res.status(500).json({ 
-          message: 'Failed to create voucher', 
-          error: voucherError.message 
+        return res.status(500).json({
+          message: 'Failed to create voucher',
+          error: voucherError.message
         });
       }
     }
 
     application.status = status;
     await application.save();
-    console.log('✅ Application updated to:', status);
 
     // Populate and return updated application
     const updatedApp = await Application.findById(application._id)
       .populate('applicant', 'name email phone')
       .populate('voucher', 'code amount status');
 
-    // Send email notification if SendGrid is configured
-    if (process.env.SENDGRID_API_KEY && status === 'approved' && updatedApp.voucher) {
+    // Send approval email via Gmail SMTP
+    if (transporter && status === 'approved' && updatedApp.voucher) {
       try {
-        const sgMail = require('@sendgrid/mail');
-        sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-        
         const applicant = await User.findById(application.applicant);
-        
+
         if (applicant && applicant.email) {
-          const msg = {
-            to: applicant.email,
-            from: process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com',
-            subject: 'Aid Application Approved - Amanah and Ikhlas Charitable Initiative',
-            html: `
-              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-                <div style="background: #1a5f2a; padding: 20px; text-align: center;">
-                  <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Charitable Initiative</h1>
-                </div>
-                <div style="padding: 30px; background: #f9f9f9;">
-                  <h2 style="color: #2d3436;">Application Approved! 🎉</h2>
-                  <p style="color: #636e72; line-height: 1.6;">
-                    Hello ${applicant.name || 'there'},
-                  </p>
-                  <p style="color: #636e72; line-height: 1.6;">
-                    Your aid application has been <strong>approved</strong>. Your voucher details are below:
-                  </p>
-                  <div style="background: #e8f5e9; border: 2px dashed #1a5f2a; padding: 20px; text-align: center; margin: 25px 0; border-radius: 10px;">
-                    <p style="margin: 0 0 8px 0; color: #636e72; font-size: 0.9rem;">Voucher Code</p>
-                    <p style="font-size: 1.6rem; font-weight: 800; color: #1a5f2a; margin: 0; letter-spacing: 3px; font-family: monospace;">
-                      ${updatedApp.voucher.code}
-                    </p>
-                    <p style="margin: 8px 0 0 0; color: #1a5f2a; font-weight: 600;">
-                      Amount: ₦${updatedApp.voucher.amount.toLocaleString()}
-                    </p>
-                  </div>
-                  <p style="color: #636e72; line-height: 1.6;">
-                    Present this code to any authorized vendor to redeem your aid. The voucher is valid until fully redeemed.
-                  </p>
-                  <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
-                  <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
-                    Amanah and Ikhlas Charitable Initiative<br>
-                    Making a difference, one donation at a time.
-                  </p>
-                </div>
+          const html = `
+            <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+              <div style="background: #1a5f2a; padding: 20px; text-align: center;">
+                <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Charitable Initiative</h1>
               </div>
-            `
-          };
-          await sgMail.send(msg);
-          console.log('✅ Approval email sent to:', applicant.email);
+              <div style="padding: 30px; background: #f9f9f9;">
+                <h2 style="color: #2d3436;">Application Approved! 🎉</h2>
+                <p style="color: #636e72; line-height: 1.6;">
+                  Hello ${applicant.name || 'there'},
+                </p>
+                <p style="color: #636e72; line-height: 1.6;">
+                  Your aid application has been <strong>approved</strong>. Your voucher details are below:
+                </p>
+                <div style="background: #e8f5e9; border: 2px dashed #1a5f2a; padding: 20px; text-align: center; margin: 25px 0; border-radius: 10px;">
+                  <p style="margin: 0 0 8px 0; color: #636e72; font-size: 0.9rem;">Voucher Code</p>
+                  <p style="font-size: 1.6rem; font-weight: 800; color: #1a5f2a; margin: 0; letter-spacing: 3px; font-family: monospace;">
+                    ${updatedApp.voucher.code}
+                  </p>
+                  <p style="margin: 8px 0 0 0; color: #1a5f2a; font-weight: 600;">
+                    Amount: ₦${updatedApp.voucher.amount.toLocaleString()}
+                  </p>
+                </div>
+                <p style="color: #636e72; line-height: 1.6;">
+                  Present this code to any authorized vendor to redeem your aid. The voucher is valid until fully redeemed.
+                </p>
+                <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
+                <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
+                  Amanah and Ikhlas Charitable Initiative<br>
+                  Making a difference, one donation at a time.
+                </p>
+              </div>
+            </div>
+          `;
+
+          await transporter.sendMail({
+            from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
+            to: applicant.email,
+            subject: 'Aid Application Approved - Amanah and Ikhlas Charitable Initiative',
+            html
+          });
+          console.log('✅ Approval email sent via Gmail SMTP to:', applicant.email);
         }
       } catch (emailErr) {
         console.error('❌ Failed to send approval email:', emailErr.message);
