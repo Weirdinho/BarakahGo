@@ -1,16 +1,23 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { validationResult } = require('express-validator');
+const nodemailer = require('nodemailer');
 const User = require('../models/User');
 
-// Use SendGrid SDK
-const sgMail = require('@sendgrid/mail');
+// Gmail SMTP transporter
+let transporter = null;
 
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-  console.log('✅ SendGrid API key configured');
+if (process.env.EMAIL_USER && process.env.EMAIL_APP_PASSWORD) {
+  transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_APP_PASSWORD
+    }
+  });
+  console.log('✅ Gmail SMTP configured');
 } else {
-  console.log('⚠️ SendGrid API key not found - emails will be logged only');
+  console.log('⚠️ Gmail SMTP credentials not found - emails will be logged only');
 }
 
 // Generate JWT
@@ -23,58 +30,58 @@ const generateToken = (id) => {
 const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
 
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:3000';
-const EMAIL_FROM = process.env.EMAIL_FROM || 'hello@AmanahCharityFoundation.com';
+const EMAIL_FROM = process.env.EMAIL_FROM || process.env.EMAIL_USER;
 
 // Shared helper to actually send (or log, in dev) the verification email
 const sendVerificationEmail = async ({ email, name, rawToken }) => {
   const verifyUrl = `${CLIENT_URL}/verify-email?token=${rawToken}&email=${encodeURIComponent(email)}`;
 
-  if (!process.env.SENDGRID_API_KEY) {
-    console.log('🔗 Verification link (dev only, no SENDGRID_API_KEY set):', verifyUrl);
+  if (!transporter) {
+    console.log('🔗 Verification link (dev only, no Gmail SMTP configured):', verifyUrl);
     return { devUrl: verifyUrl };
   }
 
-  const msg = {
-    to: email,
-    from: EMAIL_FROM,
-    subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative',
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <div style="background: #1a5f2a; padding: 20px; text-align: center;">
-          <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Charitable Initiative</h1>
-        </div>
-        <div style="padding: 30px; background: #f9f9f9;">
-          <h2 style="color: #2d3436;">Verify Your Email</h2>
-          <p style="color: #636e72; line-height: 1.6;">
-            Hello ${name || 'there'},
-          </p>
-          <p style="color: #636e72; line-height: 1.6;">
-            Thanks for signing up! Please confirm this is your email address by clicking the button below. This link expires in 24 hours.
-          </p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verifyUrl}" style="background: #1a5f2a; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block;">
-              Verify Email
-            </a>
-          </div>
-          <p style="color: #636e72; font-size: 0.85rem; line-height: 1.6;">
-            If the button doesn't work, copy and paste this link into your browser:<br>
-            <a href="${verifyUrl}" style="color: #1a5f2a; word-break: break-all;">${verifyUrl}</a>
-          </p>
-          <p style="color: #b2bec3; font-size: 0.85rem;">
-            If you didn't create an account with us, you can safely ignore this email.
-          </p>
-          <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
-          <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
-            Amanah and Ikhlas Charitable Initiative<br>
-            Making a difference, one donation at a time.
-          </p>
-        </div>
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: #1a5f2a; padding: 20px; text-align: center;">
+        <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Charitable Initiative</h1>
       </div>
-    `
-  };
+      <div style="padding: 30px; background: #f9f9f9;">
+        <h2 style="color: #2d3436;">Verify Your Email</h2>
+        <p style="color: #636e72; line-height: 1.6;">
+          Hello ${name || 'there'},
+        </p>
+        <p style="color: #636e72; line-height: 1.6;">
+          Thanks for signing up! Please confirm this is your email address by clicking the button below. This link expires in 24 hours.
+        </p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verifyUrl}" style="background: #1a5f2a; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block;">
+            Verify Email
+          </a>
+        </div>
+        <p style="color: #636e72; font-size: 0.85rem; line-height: 1.6;">
+          If the button doesn't work, copy and paste this link into your browser:<br>
+          <a href="${verifyUrl}" style="color: #1a5f2a; word-break: break-all;">${verifyUrl}</a>
+        </p>
+        <p style="color: #b2bec3; font-size: 0.85rem;">
+          If you didn't create an account with us, you can safely ignore this email.
+        </p>
+        <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
+        <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
+          Amanah and Ikhlas Charitable Initiative<br>
+          Making a difference, one donation at a time.
+        </p>
+      </div>
+    </div>
+  `;
 
-  await sgMail.send(msg);
-  console.log('✅ Verification email sent via SendGrid to:', email);
+  await transporter.sendMail({
+    from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
+    to: email,
+    subject: 'Verify Your Email - Amanah and Ikhlas Charitable Initiative',
+    html
+  });
+  console.log('✅ Verification email sent via Gmail SMTP to:', email);
   return {};
 };
 
@@ -305,64 +312,65 @@ exports.forgotPassword = async (req, res) => {
 
     console.log('📨 Password reset requested for:', { email, time: new Date().toISOString() });
 
-    // If no SendGrid key, just log the link so you can still test locally
-    if (!process.env.SENDGRID_API_KEY) {
-      console.log('🔗 Reset link (dev only, no SENDGRID_API_KEY set):', resetUrl);
+    // If no Gmail SMTP configured, just log the link so you can still test locally
+    if (!transporter) {
+      console.log('🔗 Reset link (dev only, no Gmail SMTP configured):', resetUrl);
       return res.json({
         message: genericMessage,
         ...(process.env.NODE_ENV === 'development' && { resetUrl })
       });
     }
 
-    const msg = {
-      to: email,
-      from: EMAIL_FROM,
-      subject: 'Reset Your Password - Amanah and Ikhlas Charitable Initiative',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <div style="background: #1a5f2a; padding: 20px; text-align: center;">
-            <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Charitable Initiative</h1>
-          </div>
-          <div style="padding: 30px; background: #f9f9f9;">
-            <h2 style="color: #2d3436;">Reset Your Password</h2>
-            <p style="color: #636e72; line-height: 1.6;">
-              Hello ${user.name || 'there'},
-            </p>
-            <p style="color: #636e72; line-height: 1.6;">
-              We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.
-            </p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="background: #1a5f2a; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block;">
-                Reset Password
-              </a>
-            </div>
-            <p style="color: #636e72; font-size: 0.85rem; line-height: 1.6;">
-              If the button doesn't work, copy and paste this link into your browser:<br>
-              <a href="${resetUrl}" style="color: #1a5f2a; word-break: break-all;">${resetUrl}</a>
-            </p>
-            <p style="color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
-              ⚠️ If you didn't request this, you can safely ignore this email — your password will remain unchanged.
-            </p>
-            <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
-            <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
-              Amanah and Ikhlas Charitable Initiative<br>
-              Making a difference, one donation at a time.
-            </p>
-          </div>
+    const html = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <div style="background: #1a5f2a; padding: 20px; text-align: center;">
+          <h1 style="color: #fff; margin: 0;">Amanah and Ikhlas Charitable Initiative</h1>
         </div>
-      `
-    };
+        <div style="padding: 30px; background: #f9f9f9;">
+          <h2 style="color: #2d3436;">Reset Your Password</h2>
+          <p style="color: #636e72; line-height: 1.6;">
+            Hello ${user.name || 'there'},
+          </p>
+          <p style="color: #636e72; line-height: 1.6;">
+            We received a request to reset your password. Click the button below to choose a new one. This link expires in 1 hour.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetUrl}" style="background: #1a5f2a; color: #fff; padding: 14px 32px; border-radius: 10px; text-decoration: none; font-weight: 600; display: inline-block;">
+              Reset Password
+            </a>
+          </div>
+          <p style="color: #636e72; font-size: 0.85rem; line-height: 1.6;">
+            If the button doesn't work, copy and paste this link into your browser:<br>
+            <a href="${resetUrl}" style="color: #1a5f2a; word-break: break-all;">${resetUrl}</a>
+          </p>
+          <p style="color: #e74c3c; font-weight: 600; font-size: 0.9rem;">
+            ⚠️ If you didn't request this, you can safely ignore this email — your password will remain unchanged.
+          </p>
+          <hr style="border: none; border-top: 1px solid #dfe6e9; margin: 30px 0;">
+          <p style="color: #b2bec3; font-size: 0.85rem; text-align: center;">
+            Amanah and Ikhlas Charitable Initiative<br>
+            Making a difference, one donation at a time.
+          </p>
+        </div>
+      </div>
+    `;
 
-    await sgMail.send(msg);
-    console.log('✅ Password reset email sent via SendGrid to:', email);
+    try {
+      await transporter.sendMail({
+        from: `"Amanah and Ikhlas Charitable Initiative" <${EMAIL_FROM}>`,
+        to: email,
+        subject: 'Reset Your Password - Amanah and Ikhlas Charitable Initiative',
+        html
+      });
+      console.log('✅ Password reset email sent via Gmail SMTP to:', email);
+    } catch (emailErr) {
+      console.error('❌ Failed to send reset email:', emailErr.message);
+    }
 
     res.json({ message: genericMessage });
 
   } catch (error) {
     console.error('❌ FORGOT PASSWORD ERROR:', error.message);
-    if (error.response) {
-      console.error('❌ SendGrid response:', error.response.body);
-    }
     // Still respond with the generic message so we don't leak info or break the UX
     res.json({ message: genericMessage });
   }
