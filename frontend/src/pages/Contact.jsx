@@ -193,8 +193,7 @@ const Contact = () => {
             <span className="icon">📧</span>
             <div>
               <h4>Email</h4>
-              <p>hello@AmanahCharityFoundation.com</p>
-              <p>support@AmanahCharityFoundation.com</p>
+              <p>amanahcharity822@gmail.com</p>
             </div>
           </div>
 
@@ -202,8 +201,8 @@ const Contact = () => {
             <span className="icon">📞</span>
             <div>
               <h4>Phone</h4>
-              <p>+234 800 123 4567</p>
-              <p>+234 800 987 6543</p>
+              <p>+234 806 542 8153</p>
+              <p>+234 703 817 7123</p>
             </div>
           </div>
 
