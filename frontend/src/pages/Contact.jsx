@@ -210,7 +210,7 @@ const Contact = () => {
             <span className="icon">📍</span>
             <div>
               <h4>Address</h4>
-              <p>123 Innovation Hub,<br />Victoria Island, Lagos, Nigeria</p>
+              <p>120 Abdu Road,<br />Kaura, Zaria, Nigeria</p>
             </div>
           </div>
 
